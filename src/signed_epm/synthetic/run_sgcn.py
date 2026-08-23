@@ -22,9 +22,25 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def resolve(path: str | Path) -> Path:
+def resolve(path: str | Path, data_root: Path) -> Path:
     value = Path(path)
-    return value if value.is_absolute() else ROOT / value
+    # Bundled manifests may retain the original repository prefix. Prefer the
+    # suffix below the extracted bundle directory, even when that old absolute
+    # path happens to exist on the machine performing the reproduction.
+    if data_root.name in value.parts:
+        index = value.parts.index(data_root.name)
+        candidate = data_root.joinpath(*value.parts[index + 1:])
+        if candidate.exists():
+            return candidate
+    candidate = data_root / value
+    if candidate.exists():
+        return candidate
+    candidate = ROOT / value
+    if candidate.exists():
+        return candidate
+    if value.is_absolute() and value.exists():
+        return value
+    raise FileNotFoundError(f"cannot resolve bundled graph path: {path}")
 
 
 def train_graph(graph_root: Path, output_dir: Path, seed: int, device: str,
@@ -94,7 +110,7 @@ def main() -> None:
     for record in summary["graphs"]:
         if int(record["graph_seed"]) not in requested:
             continue
-        graph_root = resolve(record["path"])
+        graph_root = resolve(record["path"], args.data_root)
         token = record.get("token", f"{float(record['level']):.1f}".replace(".", "p"))
         output = (args.output_root / record["experiment"] /
                   f"graph_seed_{record['graph_seed']}" / f"ratio_{token}")

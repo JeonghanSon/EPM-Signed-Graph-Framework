@@ -18,6 +18,16 @@ python -m signed_epm.synthetic.run_sgcn \
   --graph-seeds 0 1 2 3 4 \
   --device "$device"
 
+python -m signed_epm.synthetic.validate \
+  --data-root "$root/structural" \
+  --output-dir "$root/structural_legacy_aligned" \
+  --opinion-set primary
+
+python -m signed_epm.synthetic.validate \
+  --data-root "$root/structural" \
+  --output-dir "$root/structural_legacy_random" \
+  --opinion-set additional_random
+
 python -m signed_epm.synthetic.generate_signed_sbm \
   --positive-root "$root/structural" \
   --output-root "$root/antagonistic" \
@@ -31,3 +41,13 @@ python -m signed_epm.synthetic.run_sgcn \
   --output-root "$root/antagonistic_sgcn" \
   --graph-seeds 0 1 2 3 4 \
   --device "$device"
+
+python -m signed_epm.synthetic.validate \
+  --data-root "$root/antagonistic" \
+  --output-dir "$root/antagonistic_legacy_aligned" \
+  --opinion-set primary
+
+python -m signed_epm.synthetic.validate \
+  --data-root "$root/antagonistic" \
+  --output-dir "$root/antagonistic_legacy_random" \
+  --opinion-set additional_random

@@ -14,6 +14,24 @@ from signed_epm.polarization.measure import build_weighted_laplacian, polarizati
 ROOT = Path(__file__).resolve().parents[3]
 
 
+def resolve_record_path(path: str | Path, data_root: Path) -> Path:
+    value = Path(path)
+    if data_root.name in value.parts:
+        index = value.parts.index(data_root.name)
+        candidate = data_root.joinpath(*value.parts[index + 1:])
+        if candidate.exists():
+            return candidate
+    candidate = data_root / value
+    if candidate.exists():
+        return candidate
+    candidate = ROOT / value
+    if candidate.exists():
+        return candidate
+    if value.is_absolute() and value.exists():
+        return value
+    raise FileNotFoundError(f"cannot resolve bundled synthetic path: {path}")
+
+
 def legacy_er(edge_path: Path, opinion_path: Path, num_nodes: int) -> float:
     graph = pd.read_csv(edge_path)
     positive = graph[graph["sign"] > 0].copy()
@@ -49,18 +67,14 @@ def evaluate_legacy(data_root: Path, output_dir: Path,
         raise ValueError(f"opinion set {opinion_set!r} is empty")
     rows = []
     for graph in summary["graphs"]:
-        graph_root = Path(graph["path"])
-        if not graph_root.is_absolute():
-            graph_root = ROOT / graph_root
+        graph_root = resolve_record_path(graph["path"], data_root)
         manifest = json.loads((graph_root / "manifest.json").read_text())
         num_nodes = int(manifest["counts"]["num_nodes"])
         edge_frame = pd.read_csv(graph_root / "train_snapshot_undirected.csv")
         positive = edge_frame[edge_frame["sign"] > 0].copy()
         laplacian = build_weighted_laplacian(positive, num_nodes, 1.0, 1.0)
         for opinion_record in opinion_records:
-            opinion_path = Path(opinion_record["path"])
-            if not opinion_path.is_absolute():
-                opinion_path = ROOT / opinion_path
+            opinion_path = resolve_record_path(opinion_record["path"], data_root)
             rows.append({
                 "experiment": graph["experiment"], "level": graph["level"],
                 "graph_seed": graph["graph_seed"],

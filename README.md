@@ -69,6 +69,13 @@ The command regenerates the synthetic networks from fixed seeds and trains a
 fresh SGCN representation for every graph condition. Generated artifacts are
 written outside the tracked source tree.
 
+To reuse the exact graph files bundled with this repository instead of
+regenerating them, run:
+
+```bash
+bash experiments/run_synthetic_bundled.sh cuda
+```
+
 ## Repository layout
 
 ```text
