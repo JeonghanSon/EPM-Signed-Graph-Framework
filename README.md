@@ -67,7 +67,9 @@ bash experiments/run_synthetic.sh cuda
 
 The command regenerates the synthetic networks from fixed seeds and trains a
 fresh SGCN representation for every graph condition. Generated artifacts are
-written outside the tracked source tree.
+written outside the tracked source tree. The paper settings—including graph
+seeds, SBM probabilities, negative-edge ratios, SGCN settings, PCA dimension,
+and negative conductance—are read from `configs/synthetic.json`.
 
 To reuse the exact graph files bundled with this repository instead of
 regenerating them, run:

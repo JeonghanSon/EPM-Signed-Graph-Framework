@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "name": "paper_signed_sbm_n1000_k8",
+  "num_nodes": 1000,
+  "num_communities": 8,
+  "graph_seeds": [0, 1, 2, 3, 4],
+  "opinion_seeds": [0, 1, 2, 3, 4],
+  "structural": {
+    "positive_probability_source": "Hohmann et al. (2023), Figure 4",
+    "baseline_probability": 0.0085,
+    "positive_p_in": [0.0085, 0.054, 0.062, 0.064, 0.067],
+    "positive_p_out": [0.0085, 0.0024, 0.0012, 0.0006, 0.0003],
+    "negative_edge_share": 0.2,
+    "negative_inter_fraction": [0.6, 0.7, 0.8, 0.9, 1.0]
+  },
+  "antagonistic": {
+    "positive_source_level": 5,
+    "positive_layer_fixed_across_conditions": true,
+    "negative_edge_share": 0.2,
+    "negative_inter_fraction": [0.6, 0.7, 0.8, 0.9, 1.0]
+  },
+  "opinions": {
+    "distribution": "symmetric Hohmann normal",
+    "mean": 0.8,
+    "standard_deviation": 0.2,
+    "aligned_and_fixed_random_permutation": true
+  },
+  "sgcn": {
+    "input_dimension": 64,
+    "output_dimension": 64,
+    "layers": 2,
+    "learning_rate": 0.01,
+    "epochs": 200,
+    "classifier": null
+  },
+  "measurement": {
+    "pca_dimension": 8,
+    "positive_conductance": 1.0,
+    "negative_conductance": 0.1,
+    "nodewise_l2_normalization": true
+  }
+}
