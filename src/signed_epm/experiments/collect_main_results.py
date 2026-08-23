@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -14,20 +15,6 @@ DATASETS = {
     "slashdot": "Slashdot",
     "epinions": "Epinions",
 }
-
-SGCN_SETTINGS = {
-    "bitcoinalpha": "tau0.5_dmax3_gamma2.0",
-    "bitcoinotc": "tau0.5_dmax3_gamma3.0",
-    "wiki_elec": "tau0.5_dmax3_gamma2.0",
-    "wiki_rfa": "tau0.5_dmax3_gamma2.5",
-    "slashdot": "tau0.2_dmax4_gamma1.5",
-    "epinions": "tau0.2_dmax3_gamma1.5",
-}
-
-# Model-agnostic comparison: SDGNN uses exactly the intervention operating
-# point selected with SGCN for each dataset; only model training is retuned.
-SDGNN_EXISTING_SETTINGS = dict(SGCN_SETTINGS)
-
 
 def load(path: Path) -> dict | None:
     if not path.exists():
@@ -47,8 +34,15 @@ def accuracy(path: Path) -> tuple[float | None, float | None]:
     return float(values.mean()), float(values.std(ddof=1))
 
 
-def row(backbone: str, dataset: str, setting: str | None, status: str) -> dict:
-    root = Path("artifacts/runs") / backbone / dataset / "signlink_3class"
+def setting_name(spec: dict) -> str:
+    return (
+        f"tau{float(spec['tau']):.1f}_dmax{int(spec['max_degree'])}_"
+        f"gamma{float(spec['gamma']):.1f}"
+    )
+
+
+def row(backbone: str, dataset: str, setting: str, artifact_root: Path) -> dict:
+    root = artifact_root / "runs" / backbone / dataset / "signlink_3class"
     base = load(root / "base" / "final_summary.json")
     epm_root = root / "epm" / setting if setting else None
     epm = load(epm_root / "final_summary.json") if epm_root else None
@@ -60,7 +54,6 @@ def row(backbone: str, dataset: str, setting: str | None, status: str) -> dict:
         "dataset": DATASETS[dataset],
         "backbone": backbone.upper(),
         "setting": setting,
-        "status": status,
         "base_test_macro_f1_mean": None,
         "base_test_macro_f1_std": None,
         "epm_test_macro_f1_mean": None,
@@ -108,17 +101,28 @@ def row(backbone: str, dataset: str, setting: str | None, status: str) -> dict:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Collect the compact main EPM result table")
+    parser.add_argument(
+        "--settings", type=Path,
+        default=Path("configs/paper/selected_interventions.json"),
+    )
+    parser.add_argument("--artifact-root", type=Path, default=Path("artifacts"))
+    parser.add_argument(
+        "--output", type=Path,
+        default=Path("artifacts/reports/main_mitigation_results.csv"),
+    )
+    args = parser.parse_args()
+    selected = json.loads(args.settings.read_text(encoding="utf-8"))
+    settings = {dataset: setting_name(spec) for dataset, spec in selected.items()}
     rows = [
-        row("sgcn", dataset, setting, "frozen")
-        for dataset, setting in SGCN_SETTINGS.items()
+        row("sgcn", dataset, settings[dataset], args.artifact_root)
+        for dataset in DATASETS
     ]
     rows.extend(
-        row("sdgnn", dataset, SDGNN_EXISTING_SETTINGS.get(dataset),
-            "provisional_grid_in_progress" if dataset in SDGNN_EXISTING_SETTINGS else "pending")
+        row("sdgnn", dataset, settings[dataset], args.artifact_root)
         for dataset in DATASETS
     )
-    output = Path("artifacts/paper/main/main_mitigation_results.csv")
-    output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
     # Keep manuscript-facing means and their five-seed sample standard
     # deviations together so the paper table can report mean +/- std.
     main_columns = [
@@ -138,8 +142,8 @@ def main() -> None:
         "epm_polarization_std",
         "polarization_reduction_pct",
     ]
-    pd.DataFrame(rows)[main_columns].to_csv(output, index=False)
-    print(f"saved={output}")
+    pd.DataFrame(rows)[main_columns].to_csv(args.output, index=False)
+    print(f"saved={args.output}")
 
 
 if __name__ == "__main__":

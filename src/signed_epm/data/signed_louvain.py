@@ -6,9 +6,7 @@
 
 import numbers
 import numpy as np
-import random as rd
 import networkx as nx
-from collections import deque
 import time
 
 

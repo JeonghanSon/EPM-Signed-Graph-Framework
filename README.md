@@ -1,4 +1,4 @@
-# Signed EPM
+# EPM Signed Graph Framework
 
 This repository implements embedding-aware polarization measurement and
 mitigation (EPM) for signed graphs. SGCN and SDGNN are used through model
@@ -74,6 +74,28 @@ regenerating them, run:
 
 ```bash
 bash experiments/run_synthetic_bundled.sh cuda
+```
+
+Both runners train a fresh SGCN representation for each condition and compute
+the EPM and ER-based control measurements. The bundled runner uses the exact
+five-seed graph files distributed under `data/synthetic/`.
+
+## Results and tests
+
+The manuscript-facing main result table is included at
+`paper_results/main_mitigation_results.csv`. After completing experiments, a
+fresh table can be collected from local artifacts with:
+
+```bash
+signed-epm-collect-results
+```
+
+The generated table is written under `artifacts/reports/` and is ignored by
+Git. Run the public unit tests with:
+
+```bash
+pip install -e '.[test]'
+pytest
 ```
 
 ## Repository layout

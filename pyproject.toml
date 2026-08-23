@@ -13,7 +13,6 @@ dependencies = [
   "networkx>=2.8",
   "scipy>=1.10",
   "scikit-learn>=1.2",
-  "matplotlib>=3.7",
   "torch>=2.0",
   "torch-geometric-signed-directed>=1.0",
 ]
@@ -28,6 +27,7 @@ signed-epm-train = "signed_epm.training.train:main"
 signed-epm-tune = "signed_epm.training.tune:main"
 signed-epm-measure = "signed_epm.polarization.measure:main"
 signed-epm-intervene = "signed_epm.experiments.interventions:main"
+signed-epm-collect-results = "signed_epm.experiments.collect_main_results:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
