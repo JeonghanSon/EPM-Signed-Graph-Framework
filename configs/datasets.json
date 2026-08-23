@@ -1,0 +1,44 @@
+{
+  "bitcoinalpha": {
+    "raw_file": "soc-sign-bitcoinalpha.csv",
+    "format": "bitcoin",
+    "fallback_k": 14,
+    "minimum_community_size": 30
+  },
+  "bitcoinotc": {
+    "raw_file": "soc-sign-bitcoinotc.csv",
+    "format": "bitcoin",
+    "fallback_k": 16,
+    "minimum_community_size": 30
+  },
+  "wiki_elec": {
+    "raw_file": "wikiElec.ElecBs3.txt",
+    "format": "wiki_elec",
+    "fallback_k": 7,
+    "minimum_community_size": 30
+  },
+  "wiki_rfa": {
+    "raw_file": "wiki-RfA.txt",
+    "format": "wiki_rfa",
+    "fallback_k": 7,
+    "minimum_community_size": 30
+  },
+  "slashdot": {
+    "raw_file": "soc-sign-Slashdot090221.txt",
+    "format": "snap_static",
+    "fallback_k": 26,
+    "minimum_community_size": 500,
+    "intervention_profile": "large",
+    "intervention_minimum_community_size": 1000,
+    "intervention_top_pairs": 50
+  },
+  "epinions": {
+    "raw_file": "soc-sign-epinions.txt",
+    "format": "snap_static",
+    "fallback_k": 27,
+    "minimum_community_size": 500,
+    "intervention_profile": "large",
+    "intervention_minimum_community_size": 1000,
+    "intervention_top_pairs": 50
+  }
+}

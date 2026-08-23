@@ -1,0 +1,12 @@
+{
+  "name": "sgcn",
+  "directed": false,
+  "input_dimensions": [64],
+  "output_dimensions": [64],
+  "layers": [2],
+  "structure_lambda": 5.0,
+  "normalize_embeddings": false,
+  "learning_rates": [0.01, 0.001, 0.0001],
+  "epochs": [50, 100, 200],
+  "search_profile": "semba_common"
+}

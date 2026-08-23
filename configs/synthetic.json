@@ -1,0 +1,23 @@
+{
+  "name": "k2_controlled_n1000",
+  "num_nodes": 1000,
+  "num_communities": 2,
+  "positive_edges": 4000,
+  "negative_edges": 1000,
+  "levels": [0.5, 0.6, 0.7, 0.8, 0.9],
+  "graph_seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "opinion_seeds": [0, 1, 2, 3, 4],
+  "primary_opinion": "community_aligned_uniform",
+  "robustness_opinions": ["community_aligned_power_law", "random_uniform", "random_power_law"],
+  "sgcn": {
+    "input_dimension": 64,
+    "output_dimension": 64,
+    "layers": 2,
+    "learning_rate": 0.01,
+    "epochs": 200,
+    "classifier": null
+  },
+  "selected_negative_conductance": 0.2,
+  "negative_conductance_sweep": [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0],
+  "selection_rule": "smallest swept eta attaining aggregate structural Spearman 0.9 while retaining double-digit antagonistic endpoint sensitivity"
+}

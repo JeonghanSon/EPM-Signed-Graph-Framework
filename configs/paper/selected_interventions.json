@@ -1,0 +1,8 @@
+{
+  "bitcoinalpha": {"tau": 0.5, "max_degree": 3, "gamma": 2.0},
+  "bitcoinotc": {"tau": 0.5, "max_degree": 3, "gamma": 3.0},
+  "wiki_elec": {"tau": 0.5, "max_degree": 3, "gamma": 2.0},
+  "wiki_rfa": {"tau": 0.5, "max_degree": 3, "gamma": 2.5},
+  "slashdot": {"tau": 0.2, "max_degree": 4, "gamma": 1.5},
+  "epinions": {"tau": 0.2, "max_degree": 3, "gamma": 1.5}
+}

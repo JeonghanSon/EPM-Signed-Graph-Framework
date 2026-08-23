@@ -1,0 +1,10 @@
+{
+  "name": "signlink_3class",
+  "classes": ["positive", "negative", "non_edge"],
+  "nonedge_policy": "strict_history",
+  "probe": "multinomial_logistic_regression",
+  "class_weight": null,
+  "metric": "macro_f1",
+  "selection": "mean_validation_over_seeds",
+  "seeds": [0, 1, 2, 3, 4]
+}

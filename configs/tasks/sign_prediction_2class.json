@@ -1,0 +1,10 @@
+{
+  "name": "sign_prediction_2class",
+  "classes": ["negative", "positive"],
+  "nonedge_policy": null,
+  "probe": "binary_logistic_regression",
+  "class_weight": null,
+  "metrics": ["macro_f1", "auc"],
+  "selection": "mean_validation_macro_f1_over_seeds",
+  "seeds": [0, 1, 2, 3, 4]
+}
