@@ -249,9 +249,29 @@ def evaluate(args: argparse.Namespace) -> None:
             print(f"EVALUATE intervention={intervention} setting={setting}", flush=True)
 
 
+def evaluate_base(args: argparse.Namespace) -> None:
+    community_metadata = load_json(
+        ROOT / "data" / "metadata" / "communities" / f"{args.dataset}.json"
+    )
+    k = int(community_metadata["selected_k"])
+    selection_root = base_root(args)
+    measurement_template = str(
+        intervention_root(args) / "seed_{seed}" / "base_measurement" / "measurement.json"
+    )
+    evaluate_selection(
+        selection_root, args.data_dir, args.model, args.task, k,
+        negative_conductance=args.negative_conductance,
+        measurement_json_template=measurement_template,
+    )
+    print("EVALUATE base", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare, generate, and tune EPM interventions")
-    parser.add_argument("command", choices=["measure", "prepare", "generate", "tune", "evaluate", "all"])
+    parser.add_argument(
+        "command",
+        choices=["measure", "prepare", "generate", "tune", "evaluate", "evaluate-base", "all"],
+    )
     parser.add_argument("--model", choices=["sgcn", "sdgnn"], required=True)
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--task", choices=["signlink_3class", "sign_prediction_2class"], required=True)
@@ -280,6 +300,8 @@ def main() -> None:
         tune(args)
     if args.command in {"evaluate", "all"}:
         evaluate(args)
+    if args.command in {"evaluate-base", "all"}:
+        evaluate_base(args)
 
 
 if __name__ == "__main__":

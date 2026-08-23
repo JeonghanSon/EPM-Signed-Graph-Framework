@@ -30,7 +30,7 @@ BTC-Alpha raw data is included. Run preprocessing and signed Louvain first:
 
 ```bash
 signed-epm-preprocess --dataset bitcoinalpha
-signed-epm-communities --dataset bitcoinalpha --fallback
+signed-epm-communities --dataset bitcoinalpha
 ```
 
 Tune the SGCN baseline. Model selection uses only the mean validation Macro-F1
@@ -46,6 +46,7 @@ gray-node rankings so multiple intervention settings can reuse them.
 
 ```bash
 bash experiments/measure.sh sgcn bitcoinalpha
+bash experiments/evaluate_base.sh sgcn bitcoinalpha
 bash experiments/prepare_mitigation.sh sgcn bitcoinalpha
 bash experiments/generate_mitigation.sh sgcn bitcoinalpha 0.5 3 2.0
 bash experiments/train_mitigated.sh sgcn bitcoinalpha 0.5 3 2.0 cuda
