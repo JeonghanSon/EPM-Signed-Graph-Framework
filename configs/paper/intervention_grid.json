@@ -1,7 +1,7 @@
 {
   "small": {
     "datasets": ["bitcoinalpha", "bitcoinotc", "wiki_elec", "wiki_rfa"],
-    "tau": [0.5, 0.6, 0.7, 0.8, 0.9],
+    "tau": [0.5, 0.7, 0.9],
     "max_degree": [2, 3],
     "gamma": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
   },
