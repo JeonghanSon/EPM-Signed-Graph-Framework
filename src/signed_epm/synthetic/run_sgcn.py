@@ -11,7 +11,6 @@ import pandas as pd
 from signed_epm.models import EncoderConfig, SGCNAdapter
 from signed_epm.graph import graph_fingerprint
 from signed_epm.polarization.measure import measure_run
-from signed_epm.synthetic.run_unsigned_sgcn import positive_only_loss
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -22,6 +21,39 @@ def set_seed(seed: int) -> None:
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+
+def positive_only_loss(model, classifier, num_nodes: int):
+    """SGCN objective for the positive-only structural control."""
+    import torch
+    import torch.nn.functional as functional
+    from torch_geometric.utils import negative_sampling
+
+    state = model()
+    positive = model.pos_edge_index
+    nonedge = negative_sampling(
+        positive,
+        num_nodes=num_nodes,
+        num_neg_samples=positive.size(1),
+        method="sparse",
+        force_undirected=True,
+    )
+    positive_logits = classifier(torch.cat(
+        [state[positive[0]], state[positive[1]]], dim=1))
+    nonedge_logits = classifier(torch.cat(
+        [state[nonedge[0]], state[nonedge[1]]], dim=1))
+    link_loss = (
+        functional.cross_entropy(
+            positive_logits,
+            torch.zeros(positive.size(1), dtype=torch.long, device=state.device),
+        )
+        + functional.cross_entropy(
+            nonedge_logits,
+            torch.ones(nonedge.size(1), dtype=torch.long, device=state.device),
+        )
+    ) / 2.0
+    positive_structure = model.structure_loss.pos_embedding_loss(state, positive)
+    return link_loss + model.lamb * positive_structure
 
 
 def resolve(path: str | Path, data_root: Path) -> Path:
