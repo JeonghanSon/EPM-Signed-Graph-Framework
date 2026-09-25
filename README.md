@@ -71,11 +71,9 @@ bash experiments/prepare_mitigation.sh \
   artifacts/mitigation/seed_0/preparation 30
 ```
 
-The final method has no pair-score threshold (`tau`), pair-degree constraint
-(`dmax`), or legacy per-pair strength (`gamma`). It retains all eligible
-community pairs, samples candidates uniformly without replacement, and applies
-one pooled greedy budget. The public runner uses a candidate cap of
-`20 * maximum_budget`:
+The final method retains all eligible community pairs, samples candidates
+uniformly without replacement, and applies one pooled greedy budget. The
+public runner uses a candidate cap of `20 * maximum_budget`:
 
 ```bash
 bash experiments/select_mitigation.sh \
