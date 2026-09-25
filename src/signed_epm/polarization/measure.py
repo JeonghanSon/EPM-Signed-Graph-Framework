@@ -58,14 +58,14 @@ def build_weighted_laplacian(
     return (sp.diags(degree) - adjacency).tocsr()
 
 
-def polarization_from_laplacian(
+def quadratic_energy_from_laplacian(
     laplacian: sp.csr_matrix,
     coordinates: np.ndarray,
     rtol: float = 1e-7,
     atol: float = 1e-10,
     maxiter: int = 10_000,
 ) -> float:
-    """Compute sqrt(mean_t x_t^T L^dagger x_t) with a sparse solve."""
+    """Compute mean_t x_t^T L^dagger x_t with a sparse solve."""
     values = np.asarray(coordinates, dtype=np.float64)
     if values.ndim != 2 or values.shape[0] != laplacian.shape[0]:
         raise ValueError("coordinate and Laplacian node dimensions differ")
@@ -96,7 +96,21 @@ def polarization_from_laplacian(
         if quadratic < -1e-8:
             raise RuntimeError(f"PSD Laplacian produced negative quadratic form {quadratic}")
         total += max(quadratic, 0.0)
-    return float(np.sqrt(total / values.shape[1]))
+    return float(total / values.shape[1])
+
+
+def polarization_from_laplacian(
+    laplacian: sp.csr_matrix,
+    coordinates: np.ndarray,
+    rtol: float = 1e-7,
+    atol: float = 1e-10,
+    maxiter: int = 10_000,
+) -> float:
+    """Compute sqrt(mean_t x_t^T L^dagger x_t) with a sparse solve."""
+    energy = quadratic_energy_from_laplacian(
+        laplacian, coordinates, rtol=rtol, atol=atol, maxiter=maxiter,
+    )
+    return float(np.sqrt(max(energy, 0.0)))
 
 
 def polarization(
@@ -126,11 +140,25 @@ def measure_run(
     k: int,
     positive_conductance: float = 1.0,
     negative_conductance: float = 0.1,
+    antagonistic_weight: float = 0.05,
 ) -> dict:
     state = load_node_state(node_state_path)
     graph = pd.read_csv(edge_path)
     coordinates, singular_values = opinion_coordinates(state, k)
-    score = polarization(graph, coordinates, positive_conductance, negative_conductance)
+    if positive_conductance != 1.0:
+        raise ValueError("the signed measure fixes positive conductance to 1")
+    from signed_epm.polarization.signed_measure import (
+        score_from_components,
+        signed_weighted_energy_components,
+    )
+    components = signed_weighted_energy_components(
+        graph, coordinates, negative_conductance,
+    )
+    score = score_from_components(
+        float(components["structural_energy"]),
+        float(components["antagonistic_energy"]),
+        antagonistic_weight,
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     np.save(output_dir / "opinion_coordinates.npy", coordinates)
     result = {
@@ -145,6 +173,12 @@ def measure_run(
         "nodewise_normalization": "l2",
         "positive_conductance": float(positive_conductance),
         "negative_conductance": float(negative_conductance),
+        "antagonistic_weight": float(antagonistic_weight),
+        "structural_energy": float(components["structural_energy"]),
+        "structural_polarization": float(components["structural_polarization"]),
+        "antagonistic_energy": float(components["antagonistic_energy"]),
+        "antagonistic_polarization": float(components["antagonistic_polarization"]),
+        "formula": "sqrt(structural_energy + alpha * antagonistic_energy)",
         "polarization": score,
     }
     (output_dir / "measurement.json").write_text(
@@ -161,10 +195,12 @@ def main() -> None:
     parser.add_argument("--k", type=int, required=True)
     parser.add_argument("--positive-conductance", type=float, default=1.0)
     parser.add_argument("--negative-conductance", type=float, default=0.1)
+    parser.add_argument("--antagonistic-weight", type=float, default=0.05)
     args = parser.parse_args()
     result = measure_run(
         args.node_state_path, args.edge_path, args.output_dir, args.k,
         args.positive_conductance, args.negative_conductance,
+        args.antagonistic_weight,
     )
     print(f"polarization={result['polarization']:.10f}")
 

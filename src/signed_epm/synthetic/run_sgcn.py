@@ -46,7 +46,7 @@ def resolve(path: str | Path, data_root: Path) -> Path:
 def train_graph(graph_root: Path, output_dir: Path, seed: int, device: str,
                 input_dimension: int, output_dimension: int, layers: int,
                 learning_rate: float, epochs: int, cache_root: Path,
-                negative_conductance: float) -> dict:
+                negative_conductance: float, antagonistic_weight: float) -> dict:
     import torch
 
     metrics_path = output_dir / "encoder_metrics.json"
@@ -88,6 +88,7 @@ def train_graph(graph_root: Path, output_dir: Path, seed: int, device: str,
         graph_root / "train_snapshot_undirected.csv",
         output_dir / "measurement", k=int(manifest["communities"]["selected_k"]),
         negative_conductance=negative_conductance,
+        antagonistic_weight=antagonistic_weight,
     )
 
 
@@ -105,6 +106,7 @@ def main() -> None:
     parser.add_argument("--learning-rate", type=float, default=0.01)
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--negative-conductance", type=float, default=0.1)
+    parser.add_argument("--antagonistic-weight", type=float, default=0.05)
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
     summary = json.loads((args.data_root / "generation_summary.json").read_text())
@@ -121,7 +123,7 @@ def main() -> None:
             graph_root, output, int(record["graph_seed"]), args.device,
             args.input_dimension, args.output_dimension, args.layers,
             args.learning_rate, args.epochs, args.cache_root,
-            args.negative_conductance,
+            args.negative_conductance, args.antagonistic_weight,
         )
         row = {"experiment": record["experiment"], "level": float(record["level"]),
                "graph_seed": int(record["graph_seed"]),
@@ -145,6 +147,7 @@ def main() -> None:
                          "output_dimension": args.output_dimension, "layers": args.layers,
                          "learning_rate": args.learning_rate, "epochs": args.epochs},
         "negative_conductance": args.negative_conductance,
+        "antagonistic_weight": args.antagonistic_weight,
         "graph_seeds": sorted(requested), "completed_graphs": len(frame),
     }
     (args.output_root / "run_summary.json").write_text(json.dumps(run_summary, indent=2) + "\n")

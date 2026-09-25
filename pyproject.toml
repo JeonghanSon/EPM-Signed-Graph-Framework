@@ -26,8 +26,12 @@ signed-epm-communities = "signed_epm.data.communities:main"
 signed-epm-train = "signed_epm.training.train:main"
 signed-epm-tune = "signed_epm.training.tune:main"
 signed-epm-measure = "signed_epm.polarization.measure:main"
-signed-epm-intervene = "signed_epm.experiments.interventions:main"
-signed-epm-collect-results = "signed_epm.experiments.collect_main_results:main"
+signed-epm-prepare = "signed_epm.mitigation.prepare:main"
+signed-epm-sample-candidates = "signed_epm.mitigation.sample_candidates:main"
+signed-epm-select = "signed_epm.mitigation.greedy:main"
+signed-epm-select-batch = "signed_epm.mitigation.batch_greedy:main"
+signed-epm-materialize = "signed_epm.mitigation.materialize:main"
+signed-epm-collect-results = "signed_epm.evaluation.collect_results:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import ast
-import hashlib
 import json
 from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import scipy.sparse as sp
 from sklearn.cluster import KMeans
 
-from signed_epm.graph import graph_fingerprint
+from signed_epm.graph import canonical_undirected, graph_fingerprint
 from signed_epm.polarization.measure import (
     build_weighted_laplacian,
-    polarization_from_laplacian,
+    quadratic_energy_from_laplacian,
 )
 
 
@@ -63,12 +63,17 @@ def prepare_intervention(
     kmeans_seed: int = 42,
     negative_conductance: float = 0.1,
     top_pairs: int | None = None,
+    antagonistic_weight: float = 0.05,
+    reused_labels: np.ndarray | None = None,
 ) -> dict:
     """Build KMeans communities, polarized-pair scores, and gray rankings."""
     state = np.asarray(node_state, dtype=np.float64)
     raw, normalized = pca_spaces(state, k)
     laplacian = build_weighted_laplacian(graph, len(state), 1.0, negative_conductance)
-    labels = KMeans(n_clusters=k, random_state=kmeans_seed, n_init=10).fit_predict(state)
+    labels = (KMeans(n_clusters=k, random_state=kmeans_seed, n_init=10).fit_predict(state)
+              if reused_labels is None else np.asarray(reused_labels, dtype=np.int64))
+    if labels.shape != (len(state),):
+        raise ValueError("reused KMeans labels and node state dimensions differ")
     grouped: dict[int, list[int]] = defaultdict(list)
     for node, label in enumerate(labels.tolist()):
         grouped[int(label)].append(node)
@@ -93,6 +98,14 @@ def prepare_intervention(
 
     all_pair_count = len(ids) * (len(ids) - 1) // 2
     candidates = centroid_pair_candidates(normalized, communities, top_pairs)
+    physical = canonical_undirected(graph)
+    negative = physical.loc[physical.sign < 0]
+    positive = physical.loc[physical.sign > 0]
+    node_community = labels
+    negative_source = negative.source.to_numpy(dtype=np.int64)
+    negative_target = negative.target.to_numpy(dtype=np.int64)
+    positive_source = positive.source.to_numpy(dtype=np.int64)
+    positive_target = positive.target.to_numpy(dtype=np.int64)
     pair_rows = []
     for left, right, prune_score in candidates:
         left_nodes, right_nodes = communities[left], communities[right]
@@ -100,11 +113,53 @@ def prepare_intervention(
         local = normalized[selected] - normalized[selected].mean(axis=0, keepdims=True)
         masked = np.zeros_like(normalized)
         masked[selected] = local
-        pair_delta = polarization_from_laplacian(laplacian, masked)
+        structural_energy = quadratic_energy_from_laplacian(laplacian, masked)
+
+        cross_negative_mask = (
+            ((node_community[negative_source] == left)
+             & (node_community[negative_target] == right))
+            | ((node_community[negative_source] == right)
+               & (node_community[negative_target] == left))
+        )
+        cross_source = negative_source[cross_negative_mask]
+        cross_target = negative_target[cross_negative_mask]
+        if len(cross_source):
+            adjacency = sp.coo_matrix(
+                (np.ones(2 * len(cross_source), dtype=np.float64),
+                 (np.r_[cross_source, cross_target], np.r_[cross_target, cross_source])),
+                shape=(len(state), len(state)), dtype=np.float64,
+            ).tocsr()
+            pair_negative_laplacian = (
+                sp.diags(np.asarray(adjacency.sum(axis=1)).ravel()) - adjacency
+            ).tocsr()
+            antagonistic_signal = pair_negative_laplacian @ normalized
+            antagonistic_energy = quadratic_energy_from_laplacian(
+                laplacian, antagonistic_signal,
+            )
+        else:
+            antagonistic_energy = 0.0
+        combined_energy = structural_energy + antagonistic_weight * antagonistic_energy
+        pair_delta = float(np.sqrt(max(combined_energy, 0.0)))
+
+        cross_positive_count = int(np.sum(
+            ((node_community[positive_source] == left)
+             & (node_community[positive_target] == right))
+            | ((node_community[positive_source] == right)
+               & (node_community[positive_target] == left))
+        ))
+        possible_cross_edges = len(left_nodes) * len(right_nodes)
         pair_rows.append({
             "community_1": left, "community_2": right,
             "size_c1": len(left_nodes), "size_c2": len(right_nodes),
             "prune_score": prune_score,
+            "structural_energy": structural_energy,
+            "structural_polarization": float(np.sqrt(max(structural_energy, 0.0))),
+            "antagonistic_energy": antagonistic_energy,
+            "weighted_antagonistic_energy": antagonistic_weight * antagonistic_energy,
+            "cross_positive_edges": cross_positive_count,
+            "cross_negative_edges": int(len(cross_source)),
+            "cross_negative_density": (len(cross_source) / possible_cross_edges
+                                       if possible_cross_edges else 0.0),
             "delta": pair_delta,
         })
 
@@ -129,11 +184,8 @@ def prepare_intervention(
     )
     pairs.to_csv(output_dir / "community_pairs.csv", index=False)
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "graph_fingerprint": graph_fingerprint(graph, directed=False),
-        "node_state_sha256": hashlib.sha256(
-            np.ascontiguousarray(state).tobytes()
-        ).hexdigest(),
         "k": int(k), "kmeans_seed": int(kmeans_seed),
         "minimum_community_size": int(minimum_community_size),
         "retained_communities": len(communities),
@@ -145,6 +197,10 @@ def prepare_intervention(
         "gray_node_coordinates": "pca_raw_none",
         "pair_coordinates": "pca_nodewise_l2",
         "negative_conductance": float(negative_conductance),
+        "antagonistic_weight": float(antagonistic_weight),
+        "pair_score": "sqrt(structural_energy + alpha * antagonistic_energy)",
+        "antagonistic_signal": "Y_ij = L^-_ij Z; only negative edges between C_i and C_j",
+        "kmeans_labels": "reused" if reused_labels is not None else "computed",
     }
     (output_dir / "preparation.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8",
@@ -158,50 +214,6 @@ def load_communities(path: Path) -> dict[int, list[int]]:
         int(row.community_id): [int(node) for node in ast.literal_eval(str(row.nodes))]
         for row in frame.itertuples(index=False)
     }
-
-
-def select_pairs(pairs: pd.DataFrame, tau: float, max_degree: int) -> pd.DataFrame:
-    minimum, maximum = float(pairs.delta.min()), float(pairs.delta.max())
-    normalized = ((pairs.delta - minimum) / (maximum - minimum)
-                  if maximum > minimum else np.ones(len(pairs)))
-    candidates = pairs.assign(delta_normalized=normalized)
-    candidates = candidates[candidates.delta_normalized >= tau].sort_values(
-        ["delta", "community_1", "community_2"],
-        ascending=[False, True, True], kind="mergesort",
-    )
-    degrees: dict[int, int] = defaultdict(int)
-    selected = []
-    for row in candidates.itertuples(index=False):
-        left, right = int(row.community_1), int(row.community_2)
-        if degrees[left] < max_degree and degrees[right] < max_degree:
-            selected.append(row._asdict())
-            degrees[left] += 1
-            degrees[right] += 1
-    return pd.DataFrame(selected, columns=candidates.columns)
-
-
-def intervention_targets(
-    communities: dict[int, list[int]], positive_graph: pd.DataFrame, gamma: float,
-) -> tuple[int, int, int]:
-    source = positive_graph.source.to_numpy()
-    target = positive_graph.target.to_numpy()
-    intra = [
-        int(np.sum(np.isin(source, nodes) & np.isin(target, nodes)))
-        for nodes in communities.values()
-    ]
-    ids = sorted(communities)
-    inter = []
-    for index, left in enumerate(ids):
-        for right in ids[index + 1:]:
-            left_nodes, right_nodes = communities[left], communities[right]
-            inter.append(int(np.sum(
-                (np.isin(source, left_nodes) & np.isin(target, right_nodes)) |
-                (np.isin(source, right_nodes) & np.isin(target, left_nodes))
-            )))
-    gray_count = int(round(np.mean([len(nodes) for nodes in communities.values()])))
-    gray_gray = int(round(np.mean(intra) * gamma))
-    gray_community = int(round(np.mean(inter) * gamma))
-    return gray_count, gray_gray, gray_community
 
 
 def model_edges(physical: pd.DataFrame, directed: bool) -> pd.DataFrame:
@@ -222,7 +234,19 @@ def write_augmented_graph(
     directed_backbone: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     output_dir.mkdir(parents=True, exist_ok=True)
-    physical = pd.DataFrame(physical_edges, columns=["source", "target"])
+    canonical_edges = [canonical(int(source), int(target))
+                       for source, target in physical_edges]
+    if any(source == target for source, target in canonical_edges):
+        raise ValueError("augmentation contains a self-loop")
+    if len(set(canonical_edges)) != len(canonical_edges):
+        raise ValueError("augmentation contains duplicate physical edges")
+    occupied = set(map(tuple, canonical_undirected(base_undirected)[
+        ["source", "target"]
+    ].astype(int).to_numpy()))
+    overlap = occupied.intersection(canonical_edges)
+    if overlap:
+        raise ValueError(f"augmentation contains {len(overlap)} existing physical edges")
+    physical = pd.DataFrame(canonical_edges, columns=["source", "target"])
     physical = physical.assign(sign=1, weight=1.0)
     encoded = model_edges(physical, directed_backbone)
     directed_augmented = pd.concat([base_directed, encoded], ignore_index=True, sort=False)
@@ -233,214 +257,3 @@ def write_augmented_graph(
     undirected_augmented.to_csv(output_dir / "train_snapshot_undirected_augmented.csv", index=False)
     return physical, encoded
 
-
-def epm_augment(
-    data_dir: Path,
-    preparation_dir: Path,
-    output_dir: Path,
-    tau: float,
-    max_degree: int,
-    gamma: float,
-    directed_backbone: bool,
-) -> dict:
-    directed = pd.read_csv(data_dir / "train_snapshot_directed.csv")
-    undirected = pd.read_csv(data_dir / "train_snapshot_undirected.csv")
-    communities = load_communities(preparation_dir / "kmeans_communities.csv")
-    pairs = pd.read_csv(preparation_dir / "community_pairs.csv")
-    selected = select_pairs(pairs, tau, max_degree)
-    gray_count, target_gray_gray, target_gray_community = intervention_targets(
-        communities, undirected[undirected.sign > 0], gamma,
-    )
-    occupied = {
-        canonical(int(source), int(target))
-        for source, target in undirected[["source", "target"]].itertuples(index=False)
-    }
-    physical_edges: list[tuple[int, int]] = []
-    records = []
-    for pair in selected.itertuples(index=False):
-        left, right = int(pair.community_1), int(pair.community_2)
-        gray = pd.read_csv(preparation_dir / "gray_rankings" / f"pair_{left}_{right}.csv")
-        gray_nodes = gray.sort_values(["score", "node_id"]).head(gray_count).node_id.astype(int).tolist()
-        gray_gray_candidates = sorted({
-            canonical(gray_nodes[a], gray_nodes[b])
-            for a in range(len(gray_nodes)) for b in range(a + 1, len(gray_nodes))
-            if canonical(gray_nodes[a], gray_nodes[b]) not in occupied
-        })
-        picked_gray_gray = gray_gray_candidates[:target_gray_gray]
-        occupied.update(picked_gray_gray)
-        picked_gray_community: list[tuple[int, int]] = []
-        left_budget = target_gray_community // 2
-        for nodes, budget in (
-            (communities[left], left_budget),
-            (communities[right], target_gray_community - left_budget),
-        ):
-            candidates = sorted({
-                canonical(gray_node, community_node)
-                for gray_node in gray_nodes for community_node in nodes
-                if gray_node != community_node and
-                canonical(gray_node, community_node) not in occupied
-            })
-            chosen = candidates[:budget]
-            occupied.update(chosen)
-            picked_gray_community.extend(chosen)
-        physical_edges.extend(picked_gray_gray + picked_gray_community)
-        records.append({
-            "community_1": left, "community_2": right,
-            "pair_delta": float(pair.delta),
-            "pair_delta_normalized": float(pair.delta_normalized),
-            "gray_nodes": len(gray_nodes),
-            "gray_gray_edges": len(picked_gray_gray),
-            "gray_community_edges": len(picked_gray_community),
-        })
-    physical, encoded = write_augmented_graph(
-        physical_edges, directed, undirected, output_dir, directed_backbone,
-    )
-    pd.DataFrame(records).to_csv(output_dir / "selected_pairs.csv", index=False)
-    summary = {
-        "schema_version": 1, "intervention": "epm_gray",
-        "tau": float(tau), "max_degree": int(max_degree), "gamma": float(gamma),
-        "selected_pairs": len(selected), "gray_nodes_per_pair": gray_count,
-        "target_gray_gray_per_pair": target_gray_gray,
-        "target_gray_community_per_pair": target_gray_community,
-        "physical_edges_added": len(physical), "model_edges_added": len(encoded),
-        "edge_budget_cost": len(encoded), "directed_backbone": directed_backbone,
-        "new_edge_sign": 1, "new_edge_weight": 1.0,
-        "graph_fingerprint_undirected": graph_fingerprint(
-            pd.read_csv(output_dir / "train_snapshot_undirected_augmented.csv"), directed=False,
-        ),
-    }
-    (output_dir / "summary.json").write_text(
-        json.dumps(summary, indent=2) + "\n", encoding="utf-8",
-    )
-    return summary
-
-
-def random_augment(
-    data_dir: Path,
-    reference_summary: dict,
-    output_dir: Path,
-    directed_backbone: bool,
-    seed: int,
-    budget_fraction: float = 1.0,
-) -> dict:
-    """Add uniform random positive physical edges under EPM's realized budget."""
-    if not 0.0 < budget_fraction <= 1.0:
-        raise ValueError("budget_fraction must be in (0, 1]")
-    directed = pd.read_csv(data_dir / "train_snapshot_directed.csv")
-    undirected = pd.read_csv(data_dir / "train_snapshot_undirected.csv")
-    manifest = json.loads((data_dir / "manifest.json").read_text(encoding="utf-8"))
-    num_nodes = int(manifest.get("counts", manifest).get("num_nodes", manifest.get("num_nodes")))
-    reference_budget = int(reference_summary["physical_edges_added"])
-    budget = int(round(reference_budget * budget_fraction))
-    occupied = {
-        canonical(int(source), int(target))
-        for source, target in undirected[["source", "target"]].itertuples(index=False)
-    }
-    rng = np.random.default_rng(np.random.SeedSequence([
-        int(seed), int(round(float(reference_summary["tau"]) * 10)),
-        int(reference_summary["max_degree"]),
-        int(round(float(reference_summary["gamma"]) * 10)), 73,
-    ]))
-    sampled: list[tuple[int, int]] = []
-    sampled_set: set[tuple[int, int]] = set()
-    while len(sampled) < budget:
-        source, target = int(rng.integers(num_nodes)), int(rng.integers(num_nodes))
-        if source == target:
-            continue
-        pair = canonical(source, target)
-        if pair not in occupied and pair not in sampled_set:
-            sampled.append(pair)
-            sampled_set.add(pair)
-    physical, encoded = write_augmented_graph(
-        sorted(sampled), directed, undirected, output_dir, directed_backbone,
-    )
-    summary = {
-        "schema_version": 1, "intervention": "random_budget_matched",
-        "reference_intervention": "epm_gray", "seed": int(seed),
-        "tau": float(reference_summary["tau"]),
-        "max_degree": int(reference_summary["max_degree"]),
-        "gamma": float(reference_summary["gamma"]),
-        "budget_fraction": float(budget_fraction),
-        "reference_physical_edge_budget": reference_budget,
-        "budget_rounding": "round_half_to_even",
-        "physical_edges_added": len(physical), "model_edges_added": len(encoded),
-        "edge_budget_cost": len(encoded), "directed_backbone": directed_backbone,
-        "new_edge_sign": 1, "new_edge_weight": 1.0,
-        "candidate_information": "train_graph_only",
-    }
-    if len(physical) != budget:
-        raise RuntimeError("random intervention failed to match its fractional budget")
-    (output_dir / "summary.json").write_text(
-        json.dumps(summary, indent=2) + "\n", encoding="utf-8",
-    )
-    return summary
-
-
-def direct_augment(
-    data_dir: Path,
-    preparation_dir: Path,
-    epm_dir: Path,
-    output_dir: Path,
-    directed_backbone: bool,
-    seed: int,
-) -> dict:
-    """Directly bridge EPM-selected community pairs with pair-matched budgets."""
-    directed = pd.read_csv(data_dir / "train_snapshot_directed.csv")
-    undirected = pd.read_csv(data_dir / "train_snapshot_undirected.csv")
-    reference = json.loads((epm_dir / "summary.json").read_text(encoding="utf-8"))
-    selected = pd.read_csv(epm_dir / "selected_pairs.csv")
-    communities = load_communities(preparation_dir / "kmeans_communities.csv")
-    occupied = {
-        canonical(int(source), int(target))
-        for source, target in undirected[["source", "target"]].itertuples(index=False)
-    }
-    physical_edges: list[tuple[int, int]] = []
-    records = []
-    for pair in selected.itertuples(index=False):
-        left, right = int(pair.community_1), int(pair.community_2)
-        pair_budget = int(pair.gray_gray_edges) + int(pair.gray_community_edges)
-        candidates = sorted({
-            canonical(source, target)
-            for source in communities[left] for target in communities[right]
-            if source != target and canonical(source, target) not in occupied
-        })
-        if len(candidates) < pair_budget:
-            raise RuntimeError(
-                f"not enough direct edges for community pair {(left, right)}: "
-                f"{len(candidates)} < {pair_budget}"
-            )
-        rng = np.random.default_rng(np.random.SeedSequence([
-            int(seed), int(round(float(reference["tau"]) * 10)),
-            int(reference["max_degree"]), int(round(float(reference["gamma"]) * 10)),
-            left, right, 97,
-        ]))
-        indices = rng.choice(len(candidates), size=pair_budget, replace=False)
-        chosen = sorted(candidates[int(index)] for index in indices)
-        occupied.update(chosen)
-        physical_edges.extend(chosen)
-        records.append({
-            "community_1": left, "community_2": right,
-            "pair_budget": pair_budget, "direct_edges_added": len(chosen),
-            "available_candidates": len(candidates),
-        })
-    expected = int(reference["physical_edges_added"])
-    if len(physical_edges) != expected:
-        raise RuntimeError(f"direct intervention budget {len(physical_edges)} != EPM {expected}")
-    physical, encoded = write_augmented_graph(
-        physical_edges, directed, undirected, output_dir, directed_backbone,
-    )
-    pd.DataFrame(records).to_csv(output_dir / "selected_pairs.csv", index=False)
-    summary = {
-        "schema_version": 1, "intervention": "direct_budget_matched",
-        "reference_intervention": "epm_gray", "seed": int(seed),
-        "tau": float(reference["tau"]), "max_degree": int(reference["max_degree"]),
-        "gamma": float(reference["gamma"]), "selected_pairs": len(selected),
-        "physical_edges_added": len(physical), "model_edges_added": len(encoded),
-        "edge_budget_cost": len(encoded), "directed_backbone": directed_backbone,
-        "new_edge_sign": 1, "new_edge_weight": 1.0,
-        "candidate_information": "train_graph_and_epm_selected_pairs_only",
-    }
-    (output_dir / "summary.json").write_text(
-        json.dumps(summary, indent=2) + "\n", encoding="utf-8",
-    )
-    return summary

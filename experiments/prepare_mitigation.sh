@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-model="${1:-sgcn}"
+node_state="${1:?node-state path is required}"
 dataset="${2:-bitcoinalpha}"
-task="${TASK:-signlink_3class}"
+k="${3:?number of communities/PCA dimensions is required}"
+output_dir="${4:-artifacts/mitigation/preparation}"
+minimum_size="${5:-30}"
 
-signed-epm-intervene prepare \
-  --model "$model" --dataset "$dataset" --task "$task" \
-  --data-dir "data/processed/$dataset"
+signed-epm-prepare \
+  --node-state "$node_state" \
+  --graph "data/processed/$dataset/train_snapshot_undirected.csv" \
+  --output-dir "$output_dir" \
+  --communities "$k" \
+  --minimum-community-size "$minimum_size" \
+  --negative-conductance 0.1 \
+  --antagonistic-weight 0.05

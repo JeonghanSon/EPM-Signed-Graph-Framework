@@ -37,6 +37,7 @@
     "pca_dimension": 8,
     "positive_conductance": 1.0,
     "negative_conductance": 0.1,
+    "antagonistic_weight": 0.05,
     "nodewise_l2_normalization": true
   }
 }

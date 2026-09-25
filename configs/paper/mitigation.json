@@ -1,0 +1,12 @@
+{
+  "negative_conductance": 0.1,
+  "antagonistic_weight": 0.05,
+  "candidate_pair_filter": "none",
+  "candidate_sampling": "uniform_pair_without_replacement",
+  "candidate_cap": "20 * maximum_budget",
+  "allocation": "pooled_greedy",
+  "small_graph_budget_rates": [0.025, 0.05, 0.075, 0.1],
+  "solver": "cg",
+  "solver_tolerance": 0.001,
+  "seeds": [0, 1, 2, 3, 4]
+}

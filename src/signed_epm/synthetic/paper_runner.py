@@ -67,6 +67,7 @@ def sgcn_command(data_root: Path, output_root: Path, config: dict, device: str) 
         "--learning-rate", str(model["learning_rate"]),
         "--epochs", str(model["epochs"]),
         "--negative-conductance", str(config["measurement"]["negative_conductance"]),
+        "--antagonistic-weight", str(config["measurement"]["antagonistic_weight"]),
         "--device", device,
     ]
 

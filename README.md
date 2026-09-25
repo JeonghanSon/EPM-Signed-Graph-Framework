@@ -1,115 +1,141 @@
 # EPM Signed Graph Framework
 
-This repository implements embedding-aware polarization measurement and
-mitigation (EPM) for signed graphs. SGCN and SDGNN are used through model
-adapters; EPM consumes their learned node states without changing either
-backbone's objective.
+This repository contains the reproducible implementation of embedding-aware
+polarization measurement and mitigation for signed graphs. It supports SGCN
+and SDGNN backbones while keeping representation learning separate from EPM.
 
-The pipeline uses a connected, static, undirected training snapshot for the
-structural operator. Positive conductance is 1, negative conductance is a small
-positive value (0.1 in the paper), and non-edges have conductance 0. Directed
-model training still uses the corresponding directed view.
+The public pipeline contains preprocessing, backbone training, the revised
+signed polarization measure, cached mitigation preparation, uniformly sampled
+gray-zone candidates, pooled greedy edge selection, graph materialization,
+retraining, and synthetic validation. Exploratory notebooks, plotting scripts,
+server launchers, logs, and manuscript working files are intentionally absent.
 
 ## Installation
 
-Python 3.10 and a PyTorch build compatible with your CUDA device are
-recommended.
+Python 3.10 is recommended. Install a PyTorch build appropriate for your
+machine first, then install this package:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .
+pip install -e '.[test]'
+pytest
 ```
 
-For an existing CUDA environment, install its matching PyTorch build first and
-then run `pip install -e .`.
+## Data and preprocessing
 
-## Lightweight reproduction
-
-BTC-Alpha raw data is included. Run preprocessing and signed Louvain first:
+The raw BTC-Alpha file is included for a lightweight reproduction. Other
+datasets can be downloaded as described in `data/README.md`.
 
 ```bash
-signed-epm-preprocess --dataset bitcoinalpha
-signed-epm-communities --dataset bitcoinalpha
+bash experiments/preprocess.sh bitcoinalpha
 ```
 
-Tune the SGCN baseline. Model selection uses only the mean validation Macro-F1
-across five seeds; test labels do not participate in selection.
+This creates the fixed train/validation/test split, directed model view,
+undirected physical-edge view, and signed-Louvain metadata under ignored
+artifact directories.
+
+## Backbone training
+
+The paper model grid is stored in `configs/paper/model_search.json`. Selection
+uses mean validation Macro-F1 over five seeds; test labels are never used for
+model or intervention selection.
 
 ```bash
 bash experiments/train_base.sh sgcn bitcoinalpha cuda
 ```
 
-Measurement and mitigation are deliberately separate. Preparation stores the
-base measurement, K-means memberships, polarized community-pair scores, and
-gray-node rankings so multiple intervention settings can reuse them.
+SGCN and SDGNN use the same preprocessing and evaluation protocol. Model
+hyperparameters can also be supplied directly to `signed-epm-train`.
+
+## Measurement
+
+Measurement consumes a trained node-state file and the undirected training
+graph. The paper uses negative conductance `eta=0.1`, antagonistic weight
+`alpha=0.05`, and the dataset-specific PCA dimension recorded by preprocessing.
 
 ```bash
-bash experiments/measure.sh sgcn bitcoinalpha
-bash experiments/evaluate_base.sh sgcn bitcoinalpha
-bash experiments/prepare_mitigation.sh sgcn bitcoinalpha
-bash experiments/generate_mitigation.sh sgcn bitcoinalpha 0.5 3 2.0
-bash experiments/train_mitigated.sh sgcn bitcoinalpha 0.5 3 2.0 cuda
+bash experiments/measure.sh \
+  artifacts/path/to/node_embeddings.pt bitcoinalpha 14 \
+  artifacts/measurement/seed_0
 ```
 
-Paper grids and the selected representative intervention settings are recorded
-under `configs/paper/`. Every script accepts explicit arguments, so alternative
-settings do not require source changes.
+## Mitigation
+
+Preparation is cached separately so that candidate sampling and multiple edge
+budgets reuse the same communities, pair scores, and gray-node rankings:
+
+```bash
+bash experiments/prepare_mitigation.sh \
+  artifacts/path/to/node_embeddings.pt bitcoinalpha 14 \
+  artifacts/mitigation/seed_0/preparation 30
+```
+
+The final method has no pair-score threshold (`tau`), pair-degree constraint
+(`dmax`), or legacy per-pair strength (`gamma`). It retains all eligible
+community pairs, samples candidates uniformly without replacement, and applies
+one pooled greedy budget. The public runner uses a candidate cap of
+`20 * maximum_budget`:
+
+```bash
+bash experiments/select_mitigation.sh \
+  bitcoinalpha \
+  artifacts/mitigation/seed_0/preparation \
+  artifacts/measurement/seed_0/opinion_coordinates.npy \
+  1000 0 artifacts/mitigation/seed_0/selection
+```
+
+The selected positive physical edges are stored in selection order. Use
+`signed-epm-materialize` to create augmented train snapshots at the desired
+budget rate, then pass each generated
+`train_snapshot_directed_augmented.csv` to `signed-epm-tune` or
+`signed-epm-train`. The representation and downstream classifier must be
+trained again on every augmented graph; base representations are not reused
+for final evaluation.
+
+The complete method settings are recorded in
+`configs/paper/mitigation.json`. Large-graph runs use the same objective and
+candidate policy with batched greedy selection for scalability.
 
 ## Synthetic validation
 
-The public package contains the generators for the signed structural-separation
-and antagonistic-alignment experiments. Run:
+Exact five-seed synthetic graph bundles and the generation code are included.
+To regenerate the networks and train a fresh SGCN for each condition:
 
 ```bash
 bash experiments/run_synthetic.sh cuda
 ```
 
-The command regenerates the synthetic networks from fixed seeds and trains a
-fresh SGCN representation for every graph condition. Generated artifacts are
-written outside the tracked source tree. The paper settings—including graph
-seeds, SBM probabilities, negative-edge ratios, SGCN settings, PCA dimension,
-and negative conductance—are read from `configs/synthetic.json`.
-
-To reuse the exact graph files bundled with this repository instead of
-regenerating them, run:
+To use the exact bundled graphs:
 
 ```bash
 bash experiments/run_synthetic_bundled.sh cuda
 ```
 
-Both runners train a fresh SGCN representation for each condition and compute
-the EPM and ER-based control measurements. The bundled runner uses the exact
-five-seed graph files distributed under `data/synthetic/`.
-
-## Results and tests
-
-The manuscript-facing main result table is included at
-`paper_results/main_mitigation_results.csv`. After completing experiments, a
-fresh table can be collected from local artifacts with:
-
-```bash
-signed-epm-collect-results
-```
-
-The generated table is written under `artifacts/reports/` and is ignored by
-Git. Run the public unit tests with:
-
-```bash
-pip install -e '.[test]'
-pytest
-```
+The configuration in `configs/synthetic.json` records graph size, SBM
+conditions, signed-edge construction, opinions, seeds, and model settings.
 
 ## Repository layout
 
 ```text
-configs/          model, dataset, task, and paper experiment settings
-data/             BTC-Alpha raw data, metadata, and synthetic bundles
-experiments/      stage-by-stage reproduction commands
-paper_results/    compact main mitigation result table
-src/signed_epm/   preprocessing, adapters, measurement, and mitigation
-tests/            unit tests for public pipeline components
+configs/          dataset, model, task, measurement, and mitigation settings
+data/             dataset documentation, BTC-Alpha raw data, synthetic bundles
+experiments/      concise stage-by-stage reproduction commands
+src/signed_epm/   preprocessing, models, measurement, mitigation, evaluation
+tests/            unit tests for the released pipeline
 ```
 
-Training checkpoints, caches, logs, exploratory analyses, and manuscript
-figures are intentionally excluded.
+Generated datasets, checkpoints, NumPy arrays, logs, figures, and result
+artifacts are ignored by Git. No machine-specific paths or credentials are
+required by the released commands.
+
+For manuscript tables, create a CSV manifest with columns `dataset`, `seed`,
+`base_metrics`, `mitigated_metrics`, `base_measurement`, and
+`mitigated_measurement`, then run:
+
+```bash
+signed-epm-collect-results \
+  --manifest artifacts/result_manifest.csv \
+  --output artifacts/main_results.csv \
+  --split test
+```

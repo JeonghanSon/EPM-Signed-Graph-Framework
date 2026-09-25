@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-model="${1:-sgcn}"
+node_state="${1:?node-state path is required}"
 dataset="${2:-bitcoinalpha}"
-task="${TASK:-signlink_3class}"
+k="${3:?PCA dimension k is required}"
+output_dir="${4:-artifacts/measurement}"
 
-signed-epm-intervene measure \
-  --model "$model" --dataset "$dataset" --task "$task" \
-  --data-dir "data/processed/$dataset"
+signed-epm-measure \
+  --node-state-path "$node_state" \
+  --edge-path "data/processed/$dataset/train_snapshot_undirected.csv" \
+  --output-dir "$output_dir" \
+  --k "$k" \
+  --negative-conductance 0.1 \
+  --antagonistic-weight 0.05
