@@ -9,18 +9,35 @@ import numpy as np
 import pandas as pd
 
 from signed_epm.data.preprocess import DEFAULT_CONFIG, ROOT, load_json
+from signed_epm.data.signed_louvain import best_partition
+from signed_epm.data.signed_louvain_utils import build_nx_graph, build_subgraphs
 
 
 def community_sizes(communities: dict[int, list[int]]) -> list[int]:
     return [len(nodes) for nodes in communities.values()]
 
 
+def run_signed_louvain(
+    edge_list: list[tuple[int, int, float]], num_nodes: int, seed: int,
+) -> tuple[dict[int, list[int]], object]:
+    """Run the bundled signed multilayer Louvain implementation."""
+    graph = build_nx_graph(num_nodes, edge_list)
+    positive, negative = build_subgraphs(graph, weight="weight")
+    membership = best_partition(
+        layers=[positive, negative],
+        resolutions=[1.0, 1.0],
+        layer_weights=[1.0, -1.0],
+        random_state=seed,
+    )
+    communities: dict[int, list[int]] = {}
+    for node, community in membership.items():
+        communities.setdefault(int(community), []).append(int(node))
+    return communities, graph
+
+
 def estimate_signed_louvain(dataset_dir: Path, dataset: str, minimum_size: int,
                             seeds: list[int], overwrite: bool = False) -> dict:
-    """Run the preserved signed multilayer Louvain implementation on train."""
-    # Transitional import: this is repository-local and removes the former
-    # dependency on ../EPM-ICDM. It will move under signed_epm after parity.
-    from EPM.preprocessing.community_detection.run_signed_louvain import run_signed_louvain
+    """Run the bundled signed multilayer Louvain implementation on train."""
 
     train_path = dataset_dir / "train_snapshot_undirected.csv"
     if not train_path.exists():
@@ -37,7 +54,7 @@ def estimate_signed_louvain(dataset_dir: Path, dataset: str, minimum_size: int,
     num_nodes = int(train[["source", "target"]].to_numpy().max()) + 1
     valid_counts = []
     for seed in seeds:
-        communities, _ = run_signed_louvain(edges, num_nodes, str(output), seed=seed)
+        communities, _ = run_signed_louvain(edges, num_nodes, seed)
         rows = [{"community_id": int(key), "nodes": ",".join(map(str, sorted(nodes))),
                  "size": len(nodes)} for key, nodes in sorted(communities.items())]
         pd.DataFrame(rows).to_csv(output / f"communities_seed{seed}.csv", index=False)
