@@ -2,6 +2,7 @@
   "schema_version": 1,
   "dataset": "bitcoinalpha",
   "source_graph": "train_snapshot_undirected.csv",
+  "graph_fingerprint": "3530d815396edeb19dcbe9347a178b49828f3fdc9c49d850764c3049d8689405",
   "method": "signed_louvain",
   "positive_layer_weight": 1.0,
   "negative_layer_weight": -1.0,
@@ -9,6 +10,13 @@
     1.0,
     1.0
   ],
+  "exploration_depth": 2,
+  "layer_masks": [
+    false,
+    true
+  ],
+  "maximum_passes": 10,
+  "convergence_epsilon": 1e-07,
   "minimum_community_size": 30,
   "seeds": [
     0,

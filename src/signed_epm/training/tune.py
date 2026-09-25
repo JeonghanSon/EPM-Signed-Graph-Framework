@@ -11,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 
 from signed_epm.data.preprocess import ROOT, load_json
+from signed_epm.graph import graph_fingerprint
 
 
 CONFIG_COLUMNS = ["input_dimension", "output_dimension", "layers",
@@ -57,6 +58,17 @@ def run_candidate(args: argparse.Namespace, seed: int, input_dimension: int,
     run_dir = candidate_path(args.output_root, seed, input_dimension, output_dimension,
                              layers, learning_rate, epochs, class_weight)
     metrics_path = run_dir / "metrics.json"
+    train_path = None
+    if args.train_path_template is not None:
+        train_path = Path(str(args.train_path_template).format(seed=seed))
+    elif args.train_path is not None:
+        train_path = args.train_path
+    effective_train_path = train_path or args.data_dir / "train_events.csv"
+    if not effective_train_path.exists():
+        raise FileNotFoundError(f"training graph does not exist: {effective_train_path}")
+    expected_graph_fingerprint = graph_fingerprint(
+        pd.read_csv(effective_train_path), directed=args.model == "sdgnn",
+    )
     if args.overwrite_candidates and run_dir.exists():
         shutil.rmtree(run_dir)
     # A terminated training process can leave a non-empty directory without
@@ -64,6 +76,28 @@ def run_candidate(args: argparse.Namespace, seed: int, input_dimension: int,
     # candidates remain resumable through their metrics file.
     if run_dir.exists() and not metrics_path.exists():
         shutil.rmtree(run_dir)
+    if metrics_path.exists():
+        existing = json.loads(metrics_path.read_text(encoding="utf-8"))
+        expected_config = {
+            "input_dimension": input_dimension,
+            "output_dimension": output_dimension,
+            "layers": layers,
+            "learning_rate": learning_rate,
+            "epochs": epochs,
+            "weight_decay": 0.0,
+            "class_weight": None if class_weight == "none" else "balanced",
+        }
+        reusable = (
+            existing.get("model") == args.model
+            and existing.get("task") == args.task
+            and int(existing.get("seed", -1)) == seed
+            and existing.get("graph_fingerprint") == expected_graph_fingerprint
+            and existing.get("config") == expected_config
+            and existing.get("test") is None
+        )
+        if not reusable:
+            print(f"STALE candidate, retraining: {run_dir}", flush=True)
+            shutil.rmtree(run_dir)
     if not metrics_path.exists():
         run_dir.mkdir(parents=True, exist_ok=True)
         command = [
@@ -76,20 +110,30 @@ def run_candidate(args: argparse.Namespace, seed: int, input_dimension: int,
             "--class-weight", class_weight, "--seed", str(seed), "--device", args.device,
             "--validation-only",
         ]
-        train_path = None
-        if args.train_path_template is not None:
-            train_path = Path(str(args.train_path_template).format(seed=seed))
-        elif args.train_path is not None:
-            train_path = args.train_path
         if train_path is not None:
-            if not train_path.exists():
-                raise FileNotFoundError(f"training graph does not exist: {train_path}")
             command.extend(["--train-path", str(train_path)])
         print("RUN", " ".join(command), flush=True)
         subprocess.run(command, check=True)
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     if metrics.get("test") is not None:
         raise RuntimeError(f"tuning candidate contains test results: {metrics_path}")
+    expected_config = {
+        "input_dimension": input_dimension,
+        "output_dimension": output_dimension,
+        "layers": layers,
+        "learning_rate": learning_rate,
+        "epochs": epochs,
+        "weight_decay": 0.0,
+        "class_weight": None if class_weight == "none" else "balanced",
+    }
+    if (
+        metrics.get("model") != args.model
+        or metrics.get("task") != args.task
+        or int(metrics.get("seed", -1)) != seed
+        or metrics.get("graph_fingerprint") != expected_graph_fingerprint
+        or metrics.get("config") != expected_config
+    ):
+        raise RuntimeError(f"training candidate provenance mismatch: {metrics_path}")
     return {
         "seed": seed,
         "input_dimension": input_dimension,

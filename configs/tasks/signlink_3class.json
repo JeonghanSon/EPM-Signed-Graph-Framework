@@ -1,7 +1,7 @@
 {
   "name": "signlink_3class",
   "classes": ["positive", "negative", "non_edge"],
-  "nonedge_policy": "strict_history",
+  "nonedge_policy": "strict_history_fixed_evaluation",
   "probe": "multinomial_logistic_regression",
   "class_weight": null,
   "metric": "macro_f1",

@@ -1,30 +1,14 @@
 {
-  "schema_version": 1,
-  "name": "paper_signed_sbm_n1000_k8",
+  "name": "k2_controlled_n1000",
   "num_nodes": 1000,
-  "num_communities": 8,
-  "graph_seeds": [0, 1, 2, 3, 4],
+  "num_communities": 2,
+  "positive_edges": 4000,
+  "negative_edges": 1000,
+  "levels": [0.5, 0.6, 0.7, 0.8, 0.9],
+  "graph_seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   "opinion_seeds": [0, 1, 2, 3, 4],
-  "structural": {
-    "positive_probability_source": "Hohmann et al. (2023), Figure 4",
-    "baseline_probability": 0.0085,
-    "positive_p_in": [0.0085, 0.054, 0.062, 0.064, 0.067],
-    "positive_p_out": [0.0085, 0.0024, 0.0012, 0.0006, 0.0003],
-    "negative_edge_share": 0.2,
-    "negative_inter_fraction": [0.6, 0.7, 0.8, 0.9, 1.0]
-  },
-  "antagonistic": {
-    "positive_source_level": 5,
-    "positive_layer_fixed_across_conditions": true,
-    "negative_edge_share": 0.2,
-    "negative_inter_fraction": [0.6, 0.7, 0.8, 0.9, 1.0]
-  },
-  "opinions": {
-    "distribution": "symmetric Hohmann normal",
-    "mean": 0.8,
-    "standard_deviation": 0.2,
-    "aligned_and_fixed_random_permutation": true
-  },
+  "primary_opinion": "community_aligned_uniform",
+  "robustness_opinions": ["community_aligned_power_law", "random_uniform", "random_power_law"],
   "sgcn": {
     "input_dimension": 64,
     "output_dimension": 64,
@@ -33,11 +17,7 @@
     "epochs": 200,
     "classifier": null
   },
-  "measurement": {
-    "pca_dimension": 8,
-    "positive_conductance": 1.0,
-    "negative_conductance": 0.1,
-    "antagonistic_weight": 0.05,
-    "nodewise_l2_normalization": true
-  }
+  "selected_negative_conductance": 0.2,
+  "negative_conductance_sweep": [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0],
+  "selection_rule": "smallest swept eta attaining aggregate structural Spearman 0.9 while retaining double-digit antagonistic endpoint sensitivity"
 }

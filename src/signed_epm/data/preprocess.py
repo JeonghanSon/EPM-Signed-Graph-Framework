@@ -139,8 +139,9 @@ def parse_snap_static(path: Path) -> pd.DataFrame:
     for column in ("source", "target", "weight"):
         frame[column] = frame[column].astype(int)
     frame = frame[(frame["weight"] != 0) & (frame["source"] != frame["target"])].copy()
-    source, target = frame["source"].to_numpy(), frame["target"].to_numpy()
-    frame["source"], frame["target"] = np.minimum(source, target), np.maximum(source, target)
+    # Preserve the raw orientation for directed backbones. Physical-pair
+    # canonicalization and duplicate resolution happen in ``build_events``
+    # without overwriting these endpoints.
     return frame.reset_index(drop=True)
 
 
@@ -183,12 +184,15 @@ def build_events(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[int, str]]:
     if temporal:
         frame = frame.sort_values("timestamp").reset_index(drop=True)
     else:
-        source, target = frame["source"].astype(int).to_numpy(), frame["target"].astype(int).to_numpy()
-        frame["source"], frame["target"] = np.minimum(source, target), np.maximum(source, target)
+        source = frame["source"].astype(int).to_numpy()
+        target = frame["target"].astype(int).to_numpy()
+        frame["_pair_source"] = np.minimum(source, target)
+        frame["_pair_target"] = np.maximum(source, target)
         frame["_order"] = np.arange(len(frame), dtype=np.int64)
-        frame = frame.drop_duplicates(["source", "target"], keep="last")
-        frame = frame.sort_values("_order", kind="mergesort").drop(columns="_order").reset_index(drop=True)
-        frame["source"], frame["target"] = frame["source"].astype(str), frame["target"].astype(str)
+        frame = frame.drop_duplicates(["_pair_source", "_pair_target"], keep="last")
+        frame = frame.sort_values("_order", kind="mergesort").drop(
+            columns=["_pair_source", "_pair_target", "_order"],
+        ).reset_index(drop=True)
     frame["event_id"] = np.arange(len(frame), dtype=np.int64)
     return remap_first_seen(frame)
 

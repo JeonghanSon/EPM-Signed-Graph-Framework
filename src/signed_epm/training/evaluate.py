@@ -7,8 +7,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from signed_epm.graph import DatasetSplits
-from signed_epm.polarization.measure import load_node_state, measure_run
+from signed_epm.graph import DatasetSplits, graph_fingerprint
+from signed_epm.polarization.measure import (
+    load_node_state,
+    measure_run,
+    node_state_fingerprint,
+)
 from signed_epm.tasks.signlink import protocol_for
 
 
@@ -42,6 +46,7 @@ def evaluate_selection(
     train_path_template: str | None = None,
     measurement_edge_template: str | None = None,
     negative_conductance: float = 0.1,
+    antagonistic_weight: float = 0.05,
     measurement_json_template: str | None = None,
 ) -> pd.DataFrame:
     selected = pd.read_csv(selection_root / "selected_runs.csv").sort_values("seed")
@@ -56,6 +61,15 @@ def evaluate_selection(
                      if measurement_edge_template else data_dir / "train_snapshot_undirected.csv")
         train_graph = pd.read_csv(train_path)
         node_state = load_node_state(run_dir / "node_embeddings.pt")
+        run_metrics_path = run_dir / "metrics.json"
+        run_metrics = json.loads(run_metrics_path.read_text(encoding="utf-8"))
+        expected_train_fingerprint = graph_fingerprint(
+            train_graph, directed=model == "sdgnn",
+        )
+        if run_metrics.get("graph_fingerprint") != expected_train_fingerprint:
+            raise ValueError(
+                f"selected run was trained on a different graph: {run_metrics_path}"
+            )
         probe = SavedLinearProbe(run_dir / "logistic_classifier.npz")
         protocol = protocol_for(task, seed, directed=model == "sdgnn")
         examples = protocol.examples(
@@ -71,10 +85,28 @@ def evaluate_selection(
                 raise ValueError(
                     f"measurement negative conductance mismatch: {measurement_path}"
                 )
+            if float(measurement.get("antagonistic_weight", -1.0)) != antagonistic_weight:
+                raise ValueError(
+                    f"measurement antagonistic weight mismatch: {measurement_path}"
+                )
+            if measurement.get("measure_version") != "signed_coherent_v1":
+                raise ValueError(f"non-canonical measurement: {measurement_path}")
+            if measurement.get("node_state_fingerprint") != node_state_fingerprint(node_state):
+                raise ValueError(
+                    f"measurement node-state fingerprint mismatch: {measurement_path}"
+                )
+            measured_graph = pd.read_csv(edge_path)
+            if measurement.get("graph_fingerprint") != graph_fingerprint(
+                measured_graph, directed=False,
+            ):
+                raise ValueError(
+                    f"measurement graph fingerprint mismatch: {measurement_path}"
+                )
         else:
             measurement = measure_run(
                 run_dir / "node_embeddings.pt", edge_path, run_dir / "measurement",
                 k, negative_conductance=negative_conductance,
+                antagonistic_weight=antagonistic_weight,
             )
         result = {
             "schema_version": 1, "seed": seed, "model": model, "task": task,
@@ -126,12 +158,14 @@ def main() -> None:
     parser.add_argument("--train-path-template", default=None)
     parser.add_argument("--measurement-edge-template", default=None)
     parser.add_argument("--negative-conductance", type=float, default=0.1)
+    parser.add_argument("--antagonistic-weight", type=float, default=0.05)
     parser.add_argument("--measurement-json-template", default=None)
     args = parser.parse_args()
     frame = evaluate_selection(
         args.selection_root, args.data_dir, args.model, args.task, args.k,
         args.train_path_template, args.measurement_edge_template,
         args.negative_conductance,
+        args.antagonistic_weight,
         args.measurement_json_template,
     )
     print(f"test_macro_f1={frame.test_macro_f1.mean():.6f} ")

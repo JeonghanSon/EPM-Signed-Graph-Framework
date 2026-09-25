@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -118,11 +119,88 @@ def polarization(
     coordinates: np.ndarray,
     positive_conductance: float = 1.0,
     negative_conductance: float = 0.1,
+    antagonistic_weight: float = 0.05,
 ) -> float:
-    laplacian = build_weighted_laplacian(
-        graph, len(coordinates), positive_conductance, negative_conductance,
+    """Compute the canonical signed EPM score.
+
+    The structural and antagonistic signals share the signed conductance
+    geometry ``L_eta``.  Setting ``antagonistic_weight=0`` recovers the
+    structural-only formulation without maintaining a separate legacy path.
+    """
+    if antagonistic_weight < 0:
+        raise ValueError("antagonistic_weight must be nonnegative")
+    components = signed_energy_components(
+        graph, coordinates, positive_conductance, negative_conductance,
     )
-    return polarization_from_laplacian(laplacian, coordinates)
+    return float(np.sqrt(max(
+        components["structural_energy"]
+        + antagonistic_weight * components["antagonistic_energy"],
+        0.0,
+    )))
+
+
+def score_from_components(
+    structural_energy: float,
+    antagonistic_energy: float,
+    antagonistic_weight: float,
+) -> float:
+    """Combine already computed canonical component energies."""
+    if antagonistic_weight < 0:
+        raise ValueError("antagonistic_weight must be nonnegative")
+    return float(np.sqrt(max(
+        structural_energy + antagonistic_weight * antagonistic_energy, 0.0,
+    )))
+
+
+def negative_edge_laplacian(graph: pd.DataFrame, num_nodes: int) -> sp.csr_matrix:
+    """Return the unweighted PSD Laplacian of the negative physical layer."""
+    physical = canonical_undirected(graph)
+    negative = physical.loc[physical.sign < 0]
+    source = negative.source.to_numpy(dtype=np.int64)
+    target = negative.target.to_numpy(dtype=np.int64)
+    if not len(source):
+        return sp.csr_matrix((num_nodes, num_nodes), dtype=np.float64)
+    adjacency = sp.coo_matrix(
+        (np.ones(2 * len(source), dtype=np.float64),
+         (np.concatenate([source, target]), np.concatenate([target, source]))),
+        shape=(num_nodes, num_nodes), dtype=np.float64,
+    ).tocsr()
+    return (sp.diags(np.asarray(adjacency.sum(axis=1)).ravel()) - adjacency).tocsr()
+
+
+def signed_energy_components(
+    graph: pd.DataFrame,
+    coordinates: np.ndarray,
+    positive_conductance: float = 1.0,
+    negative_conductance: float = 0.1,
+) -> dict[str, float | int]:
+    """Return the structural and coherent-antagonistic EPM energies."""
+    values = np.asarray(coordinates, dtype=np.float64)
+    if values.ndim != 2:
+        raise ValueError("coordinates must be a two-dimensional array")
+    physical = canonical_undirected(graph)
+    laplacian = build_weighted_laplacian(
+        physical, len(values), positive_conductance, negative_conductance,
+    )
+    antagonistic_signal = negative_edge_laplacian(physical, len(values)) @ values
+    structural_energy = quadratic_energy_from_laplacian(laplacian, values)
+    antagonistic_energy = quadratic_energy_from_laplacian(
+        laplacian, antagonistic_signal,
+    )
+    return {
+        "num_nodes": len(values),
+        "k": values.shape[1],
+        "num_edges": len(physical),
+        "num_positive_edges": int((physical.sign > 0).sum()),
+        "num_negative_edges": int((physical.sign < 0).sum()),
+        "negative_prevalence": float((physical.sign < 0).mean()),
+        "positive_conductance": float(positive_conductance),
+        "negative_conductance": float(negative_conductance),
+        "structural_energy": structural_energy,
+        "structural_polarization": float(np.sqrt(max(structural_energy, 0.0))),
+        "antagonistic_energy": antagonistic_energy,
+        "antagonistic_polarization": float(np.sqrt(max(antagonistic_energy, 0.0))),
+    }
 
 
 def load_node_state(path: Path) -> np.ndarray:
@@ -131,6 +209,16 @@ def load_node_state(path: Path) -> np.ndarray:
     if not isinstance(value, torch.Tensor):
         raise TypeError(f"expected a tensor at {path}")
     return value.detach().cpu().numpy()
+
+
+def node_state_fingerprint(state: np.ndarray) -> str:
+    """Content fingerprint preventing reuse across retrained representations."""
+    values = np.ascontiguousarray(np.asarray(state))
+    digest = hashlib.sha256()
+    digest.update(str(values.dtype).encode("ascii"))
+    digest.update(np.asarray(values.shape, dtype=np.int64).tobytes())
+    digest.update(values.tobytes())
+    return digest.hexdigest()
 
 
 def measure_run(
@@ -142,28 +230,26 @@ def measure_run(
     negative_conductance: float = 0.1,
     antagonistic_weight: float = 0.05,
 ) -> dict:
+    if antagonistic_weight < 0:
+        raise ValueError("antagonistic_weight must be nonnegative")
     state = load_node_state(node_state_path)
     graph = pd.read_csv(edge_path)
     coordinates, singular_values = opinion_coordinates(state, k)
-    if positive_conductance != 1.0:
-        raise ValueError("the signed measure fixes positive conductance to 1")
-    from signed_epm.polarization.signed_measure import (
-        score_from_components,
-        signed_weighted_energy_components,
+    components = signed_energy_components(
+        graph, coordinates, positive_conductance, negative_conductance,
     )
-    components = signed_weighted_energy_components(
-        graph, coordinates, negative_conductance,
-    )
-    score = score_from_components(
-        float(components["structural_energy"]),
-        float(components["antagonistic_energy"]),
-        antagonistic_weight,
-    )
+    score = float(np.sqrt(max(
+        components["structural_energy"]
+        + antagonistic_weight * components["antagonistic_energy"],
+        0.0,
+    )))
     output_dir.mkdir(parents=True, exist_ok=True)
     np.save(output_dir / "opinion_coordinates.npy", coordinates)
     result = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "measure_version": "signed_coherent_v1",
         "node_state_path": str(node_state_path),
+        "node_state_fingerprint": node_state_fingerprint(state),
         "edge_path": str(edge_path),
         "graph_fingerprint": graph_fingerprint(graph, directed=False),
         "num_nodes": int(state.shape[0]),
@@ -174,11 +260,9 @@ def measure_run(
         "positive_conductance": float(positive_conductance),
         "negative_conductance": float(negative_conductance),
         "antagonistic_weight": float(antagonistic_weight),
-        "structural_energy": float(components["structural_energy"]),
-        "structural_polarization": float(components["structural_polarization"]),
-        "antagonistic_energy": float(components["antagonistic_energy"]),
-        "antagonistic_polarization": float(components["antagonistic_polarization"]),
-        "formula": "sqrt(structural_energy + alpha * antagonistic_energy)",
+        "antagonistic_signal": "Y = L^- Z",
+        "score_formula": "sqrt(structural_energy + alpha * antagonistic_energy)",
+        **components,
         "polarization": score,
     }
     (output_dir / "measurement.json").write_text(

@@ -94,7 +94,8 @@ def train(args: argparse.Namespace) -> dict:
         "graph_fingerprint": graph_fingerprint(train_graph, directed=adapter.directed),
         "graph_policy": "directed_as_observed" if adapter.directed else
                         "canonical_physical_edges; bidirectional_encoder_messages",
-        "nonedge_policy": "strict_history" if args.task == "signlink_3class" else None,
+        "nonedge_policy": ("strict_history_fixed_evaluation"
+                           if args.task == "signlink_3class" else None),
         "classifier": ("multinomial_logistic_regression" if args.task == "signlink_3class"
                        else "binary_logistic_regression"),
         "config": {

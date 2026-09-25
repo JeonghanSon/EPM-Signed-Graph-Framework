@@ -15,15 +15,15 @@ class PreprocessingTests(unittest.TestCase):
 
     def test_raw_manifest_matches_local_files(self):
         manifest = json.loads((self.root / "data/metadata/raw_files.json").read_text())
-        checked = 0
+        checked = []
         for item in manifest["files"].values():
             path = self.root / "data/raw" / item["filename"]
             if not path.exists():
                 continue
             self.assertEqual(path.stat().st_size, item["bytes"])
             self.assertEqual(sha256(path), item["sha256"])
-            checked += 1
-        self.assertGreater(checked, 0, "the release must include at least one raw dataset")
+            checked.append(path.name)
+        self.assertEqual(checked, ["soc-sign-bitcoinalpha.csv"])
 
     def test_connected_rejects_isolated_node(self):
         frame = pd.DataFrame({"source": [0], "target": [1]})
@@ -55,6 +55,20 @@ class PreprocessingTests(unittest.TestCase):
         events, mapping = build_events(raw)
         self.assertEqual(len(events), 1)
         self.assertNotIn("", mapping.values())
+
+    def test_static_duplicate_pair_keeps_last_raw_direction(self):
+        from signed_epm.data.preprocess import build_events
+
+        raw = pd.DataFrame({
+            "source": [10, 20], "target": [20, 10], "weight": [1, -1],
+        })
+        events, mapping = build_events(raw)
+        self.assertEqual(len(events), 1)
+        reverse = {raw_id: node_id for node_id, raw_id in mapping.items()}
+        row = events.iloc[0]
+        self.assertEqual(int(row.source), reverse["20"])
+        self.assertEqual(int(row.target), reverse["10"])
+        self.assertEqual(int(row.weight), -1)
 
 
 if __name__ == "__main__":

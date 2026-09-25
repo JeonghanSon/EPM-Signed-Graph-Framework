@@ -28,17 +28,13 @@
     "format": "snap_static",
     "fallback_k": 26,
     "minimum_community_size": 500,
-    "intervention_profile": "large",
-    "intervention_minimum_community_size": 1000,
-    "intervention_top_pairs": 50
+    "intervention_profile": "large"
   },
   "epinions": {
     "raw_file": "soc-sign-epinions.txt",
     "format": "snap_static",
     "fallback_k": 27,
     "minimum_community_size": 500,
-    "intervention_profile": "large",
-    "intervention_minimum_community_size": 1000,
-    "intervention_top_pairs": 50
+    "intervention_profile": "large"
   }
 }

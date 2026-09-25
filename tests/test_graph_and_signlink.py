@@ -39,17 +39,24 @@ class GraphAndSignLinkTests(unittest.TestCase):
         self.assertIsInstance(protocol_for("sign_prediction_2class", 0, False),
                               SignPredictionProtocol)
 
-    def test_augmented_train_edges_are_not_sampled_as_non_edges(self):
+    def test_evaluation_non_edges_are_fixed_by_base_history(self):
         augmented = pd.concat([
             self.train,
             pd.DataFrame({"source": [4], "target": [5], "sign": [1]}),
         ], ignore_index=True)
         protocol = SignLinkProtocol(seed=0, directed=False)
-        examples = protocol.examples(augmented, self.validation, self.test, self.train, 6)
-        added = {(4, 5)}
-        for split in ("train", "validation", "test"):
-            non_edges = examples[split][examples[split].label == 2]
-            self.assertFalse(pair_set(non_edges) & added)
+        base = protocol.examples(
+            self.train, self.validation, self.test, self.train, 6,
+        )
+        mitigated = protocol.examples(
+            augmented, self.validation, self.test, self.train, 6,
+        )
+        train_non_edges = mitigated["train"][mitigated["train"].label == 2]
+        self.assertFalse(pair_set(train_non_edges) & {(4, 5)})
+        for split in ("validation", "test"):
+            base_non_edges = base[split][base[split].label == 2]
+            mitigated_non_edges = mitigated[split][mitigated[split].label == 2]
+            self.assertEqual(pair_set(base_non_edges), pair_set(mitigated_non_edges))
 
 
 if __name__ == "__main__":

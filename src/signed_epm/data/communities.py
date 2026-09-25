@@ -11,6 +11,7 @@ import pandas as pd
 from signed_epm.data.preprocess import DEFAULT_CONFIG, ROOT, load_json
 from signed_epm.data.signed_louvain import best_partition
 from signed_epm.data.signed_louvain_utils import build_nx_graph, build_subgraphs
+from signed_epm.graph import graph_fingerprint
 
 
 def community_sizes(communities: dict[int, list[int]]) -> list[int]:
@@ -45,7 +46,19 @@ def estimate_signed_louvain(dataset_dir: Path, dataset: str, minimum_size: int,
     output = dataset_dir / "communities"
     summary_path = output / "signed_louvain_summary.json"
     if summary_path.exists() and not overwrite:
-        return load_json(summary_path)
+        existing = load_json(summary_path)
+        train = pd.read_csv(train_path)
+        reusable = (
+            existing.get("graph_fingerprint") == graph_fingerprint(train, directed=False)
+            and existing.get("minimum_community_size") == minimum_size
+            and existing.get("seeds") == seeds
+            and existing.get("method") == "signed_louvain"
+        )
+        if reusable:
+            return existing
+        raise RuntimeError(
+            f"stale signed-Louvain summary: {summary_path}; rerun with --overwrite"
+        )
     output.mkdir(parents=True, exist_ok=True)
 
     train = pd.read_csv(train_path)
@@ -72,10 +85,15 @@ def estimate_signed_louvain(dataset_dir: Path, dataset: str, minimum_size: int,
         "schema_version": 1,
         "dataset": dataset,
         "source_graph": "train_snapshot_undirected.csv",
+        "graph_fingerprint": graph_fingerprint(train, directed=False),
         "method": "signed_louvain",
         "positive_layer_weight": 1.0,
         "negative_layer_weight": -1.0,
         "resolution": [1.0, 1.0],
+        "exploration_depth": 2,
+        "layer_masks": [False, True],
+        "maximum_passes": 10,
+        "convergence_epsilon": 1e-7,
         "minimum_community_size": minimum_size,
         "seeds": seeds,
         "valid_community_counts": valid_counts,
@@ -100,6 +118,9 @@ def write_fallback(dataset_dir: Path, dataset: str, spec: dict, seeds: list[int]
         "schema_version": 1,
         "dataset": dataset,
         "source_graph": "train_snapshot_undirected.csv",
+        "graph_fingerprint": graph_fingerprint(
+            pd.read_csv(dataset_dir / "train_snapshot_undirected.csv"), directed=False,
+        ),
         "method": "documented_fallback",
         "minimum_community_size": spec["minimum_community_size"],
         "seeds": seeds,

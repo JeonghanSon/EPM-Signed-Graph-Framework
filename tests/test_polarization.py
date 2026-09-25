@@ -6,7 +6,9 @@ import pandas as pd
 from signed_epm.polarization.measure import (
     build_weighted_laplacian,
     opinion_coordinates,
+    polarization,
     polarization_from_laplacian,
+    signed_energy_components,
 )
 
 
@@ -45,6 +47,22 @@ class PolarizationTests(unittest.TestCase):
         })
         with self.assertRaisesRegex(ValueError, "connected"):
             build_weighted_laplacian(disconnected, 4)
+
+    def test_canonical_score_combines_structural_and_antagonistic_energies(self):
+        coordinates = np.array([
+            [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0],
+        ])
+        components = signed_energy_components(self.graph, coordinates, 1.0, 0.1)
+        self.assertAlmostEqual(
+            polarization(self.graph, coordinates, 1.0, 0.1, 0.05) ** 2,
+            components["structural_energy"] + 0.05 * components["antagonistic_energy"],
+            places=8,
+        )
+        self.assertAlmostEqual(
+            polarization(self.graph, coordinates, 1.0, 0.1, 0.0) ** 2,
+            components["structural_energy"],
+            places=8,
+        )
 
 
 if __name__ == "__main__":

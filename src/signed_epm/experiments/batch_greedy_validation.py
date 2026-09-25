@@ -9,10 +9,9 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 
-from signed_epm.mitigation.greedy import grounded_factor, solve_grounded
 from signed_epm.graph import canonical_undirected
-from signed_epm.polarization.measure import build_weighted_laplacian
-from signed_epm.polarization.signed_measure import build_edge_subset_laplacian
+from signed_epm.mitigation.linear import grounded_factor, solve_grounded
+from signed_epm.polarization.measure import build_weighted_laplacian, negative_edge_laplacian
 
 
 def state(laplacian: sp.csr_matrix, z: np.ndarray, y: np.ndarray,
@@ -51,25 +50,21 @@ def energy(factor, z: np.ndarray, y: np.ndarray, alpha: float) -> float:
                   alpha * np.sum(y * solve_grounded(factor, y))) / z.shape[1])
 
 
-def initial_prefilter(laplacian, z, y, candidates, maximum_budget, cap, alpha):
-    source = candidates.source.to_numpy(np.int64)
-    target = candidates.target.to_numpy(np.int64)
-    labels = pd.Series(list(zip(candidates.community_1.astype(int),
-                                candidates.community_2.astype(int))), dtype="object")
-    codes, keys = pd.factorize(labels, sort=True)
-    _, hz, hy, resistance = state(laplacian, z, y, source, target)
-    gain = scores(hz, hy, resistance, source, target, alpha, z.shape[1])
+def initial_prefilter(laplacian, z, y, candidates, maximum_budget, cap, alpha,
+                      solver="direct", solver_tolerance=1e-6,
+                      solver_maximum_iterations=10_000):
+    """Globally retain the largest initial-gain candidates when needed."""
     if len(candidates) <= cap:
         return candidates.reset_index(drop=True)
-    per_pair = max(maximum_budget, int(np.ceil(cap / max(len(keys), 1))))
-    retained = []
-    for code in range(len(keys)):
-        indices = np.flatnonzero(codes == code)
-        take = min(per_pair, len(indices))
-        retained.extend(indices[np.argpartition(gain[indices], -take)[-take:]].tolist())
-    retained = np.asarray(sorted(set(retained)), dtype=np.int64)
-    if len(retained) > cap:
-        retained = retained[np.argpartition(gain[retained], -cap)[-cap:]]
+    source = candidates.source.to_numpy(np.int64)
+    target = candidates.target.to_numpy(np.int64)
+    _, hz, hy, resistance = state(
+        laplacian, z, y, source, target, solver=solver,
+        solver_tolerance=solver_tolerance,
+        solver_maximum_iterations=solver_maximum_iterations,
+    )
+    gain = scores(hz, hy, resistance, source, target, alpha, z.shape[1])
+    retained = np.argpartition(gain, -cap)[-cap:]
     return candidates.iloc[retained].reset_index(drop=True)
 
 
@@ -84,8 +79,10 @@ def select_batch(order: np.ndarray, available: np.ndarray, codes: np.ndarray,
             continue
         if edge_keys[index] in chosen_edges:
             continue
-        if mode != "global":
-            raise ValueError(f"unsupported allocation mode: {mode}")
+        if mode == "equal":
+            quota = int(np.ceil((selected_so_far + len(chosen) + 1) / pair_count))
+            if counts[codes[index]] >= quota:
+                continue
         chosen.append(index)
         chosen_edges.add(edge_keys[index])
         counts[codes[index]] += 1
@@ -107,7 +104,9 @@ def run(laplacian, z, y, candidates, checkpoints, batch_size, alpha, mode,
     counts = np.zeros(len(keys), dtype=np.int64)
     selected, records = [], []
     current = laplacian.copy()
-    initial = energy(grounded_factor(current), z, y, alpha)
+    initial = energy(grounded_factor(
+        current, solver, solver_tolerance, solver_maximum_iterations,
+    ), z, y, alpha)
     while len(selected) < checkpoints[-1]:
         next_checkpoint = min(x for x in checkpoints if x > len(selected))
         take = min(batch_size, next_checkpoint - len(selected))
@@ -136,7 +135,9 @@ def run(laplacian, z, y, candidates, checkpoints, batch_size, alpha, mode,
         ).tocsr()
         current = current + sp.diags(np.asarray(adjacency.sum(axis=1)).ravel()) - adjacency
         if len(selected) in checkpoints:
-            value = energy(grounded_factor(current), z, y, alpha)
+            value = energy(grounded_factor(
+                current, solver, solver_tolerance, solver_maximum_iterations,
+            ), z, y, alpha)
             record = {"budget": len(selected), "energy": value,
                       "polarization_reduction_pct":
                       100 * (1 - np.sqrt(max(value, 0) / initial)),
@@ -156,9 +157,11 @@ def main() -> None:
     parser.add_argument("--coordinates", type=Path, required=True)
     parser.add_argument("--candidate-file", type=Path, required=True)
     parser.add_argument("--exact-global", type=Path)
+    parser.add_argument("--exact-equal", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--batch-sizes", nargs="+", type=int, default=[25, 100])
-    parser.add_argument("--modes", nargs="+", choices=["global"], default=["global"])
+    parser.add_argument("--modes", nargs="+", choices=["global", "equal"],
+                        default=["global", "equal"])
     parser.add_argument("--rates", nargs="+", type=float, default=[.025, .05, .075, .10])
     parser.add_argument("--candidate-cap", type=int, default=50_000)
     parser.add_argument("--solver", choices=["direct", "cg"], default="direct")
@@ -171,7 +174,7 @@ def main() -> None:
     graph = canonical_undirected(pd.read_csv(args.data_dir / "train_snapshot_undirected.csv"))
     coordinates = np.load(args.coordinates)
     z = coordinates - coordinates.mean(axis=0, keepdims=True)
-    negative = build_edge_subset_laplacian(graph, len(z), sign=-1)
+    negative = negative_edge_laplacian(graph, len(z))
     y = negative @ coordinates
     y -= y.mean(axis=0, keepdims=True)
     laplacian = build_weighted_laplacian(graph, len(z), 1.0, args.eta)
@@ -179,10 +182,11 @@ def main() -> None:
     candidates = pd.read_csv(args.candidate_file)
     candidates = initial_prefilter(
         laplacian, z, y, candidates, checkpoints[-1], args.candidate_cap, args.alpha,
+        args.solver, args.solver_tolerance, args.solver_maximum_iterations,
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     candidates.to_csv(args.output_dir / "retained_candidates.csv", index=False)
-    exact_paths = {"global": args.exact_global}
+    exact_paths = {"global": args.exact_global, "equal": args.exact_equal}
     exact = {mode: pd.read_csv(exact_paths[mode])
              for mode in args.modes if exact_paths[mode] is not None}
     rows = []

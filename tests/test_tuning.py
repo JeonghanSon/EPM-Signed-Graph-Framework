@@ -1,4 +1,5 @@
 import unittest
+import json
 from argparse import Namespace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -7,6 +8,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from signed_epm.data.preprocess import ROOT, load_json
+from signed_epm.graph import graph_fingerprint
 from signed_epm.training.tune import run_candidate, select_common_configuration
 
 
@@ -70,11 +72,20 @@ class TuningSelectionTests(unittest.TestCase):
             with patch("signed_epm.training.tune.subprocess.run") as called:
                 def write_metrics(command, check):
                     self.assertIn(str(graph), command)
-                    (run_dir / "metrics.json").write_text(
-                        '{"test": null, "validation": {"macro_f1": 0.5, '
-                        '"weighted_f1": 0.6, "accuracy": 0.7, "auc": null}, '
-                        '"graph_fingerprint": "abc"}'
-                    )
+                    payload = {
+                        "model": "sgcn", "task": "signlink_3class", "seed": 3,
+                        "test": None,
+                        "validation": {"macro_f1": 0.5, "weighted_f1": 0.6,
+                                       "accuracy": 0.7, "auc": None},
+                        "graph_fingerprint": graph_fingerprint(
+                            pd.read_csv(graph), directed=False,
+                        ),
+                        "config": {"input_dimension": 64, "output_dimension": 64,
+                                   "layers": 2, "learning_rate": 0.01,
+                                   "epochs": 50, "weight_decay": 0.0,
+                                   "class_weight": None},
+                    }
+                    (run_dir / "metrics.json").write_text(json.dumps(payload))
                 called.side_effect = write_metrics
                 row = run_candidate(args, 3, 64, 64, 2, 0.01, 50, "none")
             self.assertEqual(row["seed"], 3)

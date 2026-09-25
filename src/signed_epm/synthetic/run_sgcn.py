@@ -9,7 +9,9 @@ import numpy as np
 import pandas as pd
 
 from signed_epm.models import EncoderConfig, SGCNAdapter
+from signed_epm.graph import graph_fingerprint
 from signed_epm.polarization.measure import measure_run
+from signed_epm.synthetic.run_unsigned_sgcn import positive_only_loss
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -24,48 +26,65 @@ def set_seed(seed: int) -> None:
 
 def resolve(path: str | Path, data_root: Path) -> Path:
     value = Path(path)
-    # Bundled manifests may retain the original repository prefix. Prefer the
-    # suffix below the extracted bundle directory, even when that old absolute
-    # path happens to exist on the machine performing the reproduction.
     if data_root.name in value.parts:
         index = value.parts.index(data_root.name)
         candidate = data_root.joinpath(*value.parts[index + 1:])
         if candidate.exists():
             return candidate
-    candidate = data_root / value
-    if candidate.exists():
-        return candidate
-    candidate = ROOT / value
-    if candidate.exists():
-        return candidate
+    for candidate in (data_root / value, ROOT / value):
+        if candidate.exists():
+            return candidate
     if value.is_absolute() and value.exists():
         return value
-    raise FileNotFoundError(f"cannot resolve bundled graph path: {path}")
+    raise FileNotFoundError(f"cannot resolve synthetic graph path: {path}")
 
 
 def train_graph(graph_root: Path, output_dir: Path, seed: int, device: str,
                 input_dimension: int, output_dimension: int, layers: int,
                 learning_rate: float, epochs: int, cache_root: Path,
-                negative_conductance: float, antagonistic_weight: float) -> dict:
+                negative_conductance: float = 0.1,
+                antagonistic_weight: float = 0.05) -> dict:
     import torch
 
-    metrics_path = output_dir / "encoder_metrics.json"
-    measurement_path = output_dir / "measurement" / "measurement.json"
-    if metrics_path.exists() and measurement_path.exists():
-        return json.loads(measurement_path.read_text())
-    set_seed(seed)
     graph = pd.read_csv(graph_root / "train_events.csv")
+    undirected = pd.read_csv(graph_root / "train_snapshot_undirected.csv")
     manifest = json.loads((graph_root / "manifest.json").read_text())
     num_nodes = int(manifest["counts"]["num_nodes"])
     config = EncoderConfig(input_dimension, output_dimension, layers,
                            learning_rate, epochs)
+    metrics_path = output_dir / "encoder_metrics.json"
+    measurement_path = output_dir / "measurement" / "measurement.json"
+    current_graph_fingerprint = graph_fingerprint(undirected, directed=False)
+    if metrics_path.exists() and measurement_path.exists():
+        metrics = json.loads(metrics_path.read_text())
+        measurement = json.loads(measurement_path.read_text())
+        if (
+            metrics.get("graph_fingerprint") == current_graph_fingerprint
+            and metrics.get("training_seed") == int(seed)
+            and metrics.get("config") == config.__dict__
+            and measurement.get("graph_fingerprint") == current_graph_fingerprint
+            and measurement.get("measure_version") == "signed_coherent_v1"
+            and float(measurement.get("negative_conductance", -1)) == negative_conductance
+            and float(measurement.get("antagonistic_weight", -1)) == antagonistic_weight
+        ):
+            return measurement
+        print(f"STALE synthetic cache, retraining: {output_dir}", flush=True)
+    set_seed(seed)
     adapter = SGCNAdapter()
     model = adapter.build(graph, num_nodes, config, device, cache_root)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    positive_only = bool((graph.sign > 0).all())
+    classifier = None
+    if positive_only:
+        classifier = torch.nn.Linear(2 * output_dimension, 2).to(device)
+        optimizer = torch.optim.Adam(
+            list(model.parameters()) + list(classifier.parameters()), lr=learning_rate)
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     history = []
     for epoch in range(1, epochs + 1):
         model.train(); optimizer.zero_grad()
-        loss = adapter.loss(model)
+        loss = (positive_only_loss(model, classifier, num_nodes)
+                if positive_only else adapter.loss(model))
         if not torch.isfinite(loss):
             raise RuntimeError(f"non-finite loss for {graph_root} at epoch {epoch}")
         loss.backward(); optimizer.step()
@@ -78,7 +97,10 @@ def train_graph(graph_root: Path, output_dir: Path, seed: int, device: str,
         "schema_version": 1, "purpose": "synthetic_measurement_only",
         "classifier": None, "validation": None, "test": None,
         "graph_root": str(graph_root), "graph_seed": seed,
+        "training_seed": int(seed),
+        "graph_fingerprint": current_graph_fingerprint,
         "uses_all_controlled_train_edges": True,
+        "positive_only_objective": positive_only,
         "config": config.__dict__, "loss_initial": history[0],
         "loss_final": history[-1], "loss_history": history,
     }

@@ -1,139 +1,115 @@
 # EPM Signed Graph Framework
 
-This repository contains the reproducible implementation of embedding-aware
-polarization measurement and mitigation for signed graphs. It supports SGCN
-and SDGNN backbones while keeping representation learning separate from EPM.
+This repository implements embedding-aware polarization measurement and
+mitigation for signed graphs with SGCN and SDGNN backbones.
 
-The public pipeline contains preprocessing, backbone training, the revised
-signed polarization measure, cached mitigation preparation, uniformly sampled
-gray-zone candidates, pooled greedy edge selection, graph materialization,
-retraining, and synthetic validation. Exploratory notebooks, plotting scripts,
-server launchers, logs, and manuscript working files are intentionally absent.
+The canonical mitigation pipeline is deliberately stage-oriented:
+
+1. preprocess a connected transductive train/validation/test split;
+2. train a signed graph encoder and a separate multinomial logistic probe;
+3. measure signed polarization from PCA/L2-normalized node coordinates;
+4. cache KMeans communities and score-free gray-zone rankings;
+5. uniformly sample unique physical candidates from the union of every
+   retained community-pair gray space;
+6. select one pooled greedy edge order and materialize physical-budget
+   prefixes;
+7. recompute graph-derived features, retrain, and remeasure every augmented
+   graph.
+
+There is no pair-score threshold, maximum community-pair degree, per-pair
+allocation, or legacy strength multiplier in the released method. Intervention
+strength is the number/rate of positive physical edges added.
 
 ## Installation
 
-Python 3.10 is recommended. Install a PyTorch build appropriate for your
-machine first, then install this package:
+Python 3.10 is recommended. Install the CUDA-compatible PyTorch build for your
+machine if needed, then run:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
 pip install -e '.[test]'
-pytest
+pytest -q
 ```
 
-## Data and preprocessing
+## Data
 
-The raw BTC-Alpha file is included for a lightweight reproduction. Other
-datasets can be downloaded as described in `data/README.md`.
+BTC-Alpha is included for a lightweight reproduction. Download the other SNAP
+signed-network files as described in `data/README.md`.
 
 ```bash
 bash experiments/preprocess.sh bitcoinalpha
 ```
 
-This creates the fixed train/validation/test split, directed model view,
-undirected physical-edge view, and signed-Louvain metadata under ignored
-artifact directories.
-
-## Backbone training
-
-The paper model grid is stored in `configs/paper/model_search.json`. Selection
-uses mean validation Macro-F1 over five seeds; test labels are never used for
-model or intervention selection.
+## Base model and measurement
 
 ```bash
 bash experiments/train_base.sh sgcn bitcoinalpha cuda
-```
 
-SGCN and SDGNN use the same preprocessing and evaluation protocol. Model
-hyperparameters can also be supplied directly to `signed-epm-train`.
-
-## Measurement
-
-Measurement consumes a trained node-state file and the undirected training
-graph. The paper uses negative conductance `eta=0.1`, antagonistic weight
-`alpha=0.05`, and the dataset-specific PCA dimension recorded by preprocessing.
-
-```bash
 bash experiments/measure.sh \
   artifacts/path/to/node_embeddings.pt bitcoinalpha 14 \
   artifacts/measurement/seed_0
 ```
 
-## Mitigation
+Model hyperparameters are selected once per dataset/backbone using mean
+validation Macro-F1 across five seeds and then held fixed across interventions
+and baselines. Test labels are reporting-only.
 
-Preparation is cached separately so that candidate sampling and multiple edge
-budgets reuse the same communities, pair scores, and gray-node rankings:
+## Mitigation
 
 ```bash
 bash experiments/prepare_mitigation.sh \
   artifacts/path/to/node_embeddings.pt bitcoinalpha 14 \
-  artifacts/mitigation/seed_0/preparation 30
+  artifacts/mitigation/preparation/seed_0 30
+
+bash experiments/select_mitigation.sh \
+  bitcoinalpha artifacts/mitigation/preparation/seed_0 \
+  artifacts/measurement/seed_0/opinion_coordinates.npy \
+  988 0 artifacts/mitigation/selection/seed_0
 ```
 
-The final method retains all eligible community pairs, samples candidates
-uniformly without replacement, and applies one pooled greedy budget. The
-public runner uses a candidate cap of `20 * maximum_budget`:
+For multiple seeds, place each `selection` output at
+`<selection-parent>/seed_N/selected_edges.csv`, then materialize prefixes:
 
 ```bash
-bash experiments/select_mitigation.sh \
-  bitcoinalpha \
-  artifacts/mitigation/seed_0/preparation \
-  artifacts/measurement/seed_0/opinion_coordinates.npy \
-  1000 0 artifacts/mitigation/seed_0/selection
+bash experiments/materialize_mitigation.sh \
+  artifacts/mitigation/selection bitcoinalpha \
+  artifacts/mitigation/graphs .025 .05 .075 .10
 ```
 
-The selected positive physical edges are stored in selection order. Use
-`signed-epm-materialize` to create augmented train snapshots at the desired
-budget rate, then pass each generated
-`train_snapshot_directed_augmented.csv` to `signed-epm-tune` or
-`signed-epm-train`. The representation and downstream classifier must be
-trained again on every augmented graph; base representations are not reused
-for final evaluation.
+For SDGNN, preserve directed model edges during materialization:
 
-The complete method settings are recorded in
-`configs/paper/mitigation.json`. Large-graph runs use the same objective and
-candidate policy with batched greedy selection for scalability.
+```bash
+DIRECTED_BACKBONE=1 bash experiments/materialize_mitigation.sh \
+  artifacts/mitigation/selection bitcoinalpha \
+  artifacts/mitigation/graphs .025 .05 .075 .10
+```
+
+Pass each generated `train_snapshot_directed_augmented.csv` to
+`signed-epm-train` with the base-selected model hyperparameters. SGCN
+recomputes TSVD from that exact augmented graph; SDGNN receives the directed
+augmented view. The encoder and probe are freshly trained for every graph.
 
 ## Synthetic validation
 
-Exact five-seed synthetic graph bundles and the generation code are included.
-To regenerate the networks and train a fresh SGCN for each condition:
-
-```bash
-bash experiments/run_synthetic.sh cuda
-```
-
-To use the exact bundled graphs:
-
-```bash
-bash experiments/run_synthetic_bundled.sh cuda
-```
-
-The configuration in `configs/synthetic.json` records graph size, SBM
-conditions, signed-edge construction, opinions, seeds, and model settings.
-
-## Repository layout
+Deterministic signed-SBM generators and validators are included under
+`signed_epm.synthetic`. Synthetic graphs, seeds, and generated metadata can be
+saved verbatim for figure reproduction. The released measurement is
 
 ```text
-configs/          dataset, model, task, measurement, and mitigation settings
-data/             dataset documentation, BTC-Alpha raw data, synthetic bundles
-experiments/      concise stage-by-stage reproduction commands
-src/signed_epm/   preprocessing, models, measurement, mitigation, evaluation
-tests/            unit tests for the released pipeline
+sqrt(structural_energy + alpha * antagonistic_energy)
 ```
 
-Generated datasets, checkpoints, NumPy arrays, logs, figures, and result
-artifacts are ignored by Git. No machine-specific paths or credentials are
-required by the released commands.
+with `Y = L^- Z`, negative conductance `eta=0.1`, and antagonistic weight
+`alpha=0.05` in the paper configuration.
 
-For manuscript tables, create a CSV manifest with columns `dataset`, `seed`,
-`base_metrics`, `mitigated_metrics`, `base_measurement`, and
-`mitigated_measurement`, then run:
+## Layout
 
-```bash
-signed-epm-collect-results \
-  --manifest artifacts/result_manifest.csv \
-  --output artifacts/main_results.csv \
-  --split test
+```text
+configs/       model, task, dataset, and paper settings
+data/          public-data instructions and BTC-Alpha raw input
+experiments/   concise stage commands
+src/           audited implementation
+tests/         unit/regression tests
 ```
+
+Generated data, checkpoints, logs, figures, and full result directories are
+ignored. No server address, username, absolute path, or credential is required.

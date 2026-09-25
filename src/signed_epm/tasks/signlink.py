@@ -58,13 +58,18 @@ class SignLinkProtocol:
 
     def examples(self, train: pd.DataFrame, validation: pd.DataFrame, test: pd.DataFrame,
                  base_train: pd.DataFrame, num_nodes: int) -> dict[str, pd.DataFrame]:
-        del base_train  # Future edges are not consulted; the actual train graph is authoritative.
         if not self.directed:
-            train, validation, test = map(canonical_undirected, (train, validation, test))
+            train, validation, test, base_train = map(
+                canonical_undirected, (train, validation, test, base_train),
+            )
+        # The probe is trained against the graph it actually observes, which
+        # may include augmented positive edges.  Evaluation non-edges must not
+        # change across base and intervention runs, so validation/test use the
+        # original base history rather than the augmented training snapshot.
         forbidden = {
             "train": pair_set(train),
-            "validation": pair_set(train) | pair_set(validation),
-            "test": pair_set(train) | pair_set(validation) | pair_set(test),
+            "validation": pair_set(base_train) | pair_set(validation),
+            "test": pair_set(base_train) | pair_set(validation) | pair_set(test),
         }
         frames = {"train": train, "validation": validation, "test": test}
         result = {}
