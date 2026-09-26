@@ -15,9 +15,20 @@ from signed_epm.mitigation.linear import (
 )
 from signed_epm.mitigation.materialize import model_edges, write_augmented_graph
 from signed_epm.mitigation.prepare import prepare_intervention
+from signed_epm.experiments.nonedge_sampling import uniform_nonedge_order
 
 
 class MitigationTests(unittest.TestCase):
+    def test_uniform_nonedge_order_is_reproducible_unique_and_unordered(self):
+        occupied = {(0, 1), (2, 3), (4, 5)}
+        first = uniform_nonedge_order(12, occupied, 20, 7)
+        repeated = uniform_nonedge_order(12, occupied, 20, 7)
+        self.assertEqual(first, repeated)
+        self.assertEqual(len(first), len(set(first)))
+        self.assertTrue(set(first).isdisjoint(occupied))
+        self.assertTrue(all(left < right for left, right in first))
+        self.assertNotEqual(first, sorted(first))
+
     def test_preparation_is_score_free_and_all_pair(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

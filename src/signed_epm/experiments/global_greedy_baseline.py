@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from signed_epm.experiments.materialize_budget_strategies import uniform_nonedge_order
+from signed_epm.experiments.nonedge_sampling import uniform_nonedge_order
 from signed_epm.graph import canonical_undirected
 from signed_epm.mitigation.pooled_greedy import (
     pooled_greedy_order,
