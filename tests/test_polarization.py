@@ -3,6 +3,10 @@ import unittest
 import numpy as np
 import pandas as pd
 
+from signed_epm.experiments.measurement_sensitivity import (
+    pca_coordinates,
+    raw_coordinates,
+)
 from signed_epm.polarization.measure import (
     build_weighted_laplacian,
     opinion_coordinates,
@@ -40,6 +44,19 @@ class PolarizationTests(unittest.TestCase):
         coordinates, singular = opinion_coordinates(state, 2)
         np.testing.assert_allclose(np.linalg.norm(coordinates, axis=1), 1.0)
         self.assertEqual(singular.shape, (2,))
+
+    def test_measurement_sensitivity_coordinate_variants(self):
+        state = np.asarray([
+            [1., 0., 2.], [0., 1., 1.], [-1., 0., 0.], [0., -1., -1.],
+        ])
+        projected = pca_coordinates(state, 2, True)
+        unnormalized = pca_coordinates(state, 2, False)
+        raw = raw_coordinates(state)
+        self.assertEqual(projected.shape, (4, 2))
+        self.assertEqual(unnormalized.shape, (4, 2))
+        self.assertEqual(raw.shape, state.shape)
+        np.testing.assert_allclose(np.linalg.norm(projected, axis=1), 1.0)
+        np.testing.assert_allclose(np.linalg.norm(raw, axis=1), 1.0)
 
     def test_disconnected_graph_is_rejected(self):
         disconnected = pd.DataFrame({
