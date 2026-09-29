@@ -79,7 +79,7 @@ def estimate_signed_louvain(dataset_dir: Path, dataset: str, minimum_size: int,
         print(f"{dataset} seed={seed}: valid_communities={valid}", flush=True)
 
     counts = Counter(valid_counts)
-    # Counter preserves first occurrence for ties, matching the legacy rule.
+    # Counter preserves first occurrence for deterministic tie-breaking.
     selected = int(counts.most_common(1)[0][0])
     summary = {
         "schema_version": 1,

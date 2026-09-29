@@ -23,8 +23,8 @@ def main() -> None:
     parser.add_argument(
         "--selection-kind", choices=["pooled", "batch", "sequential"],
         default="pooled",
-        help=("pooled reads the canonical selected_edges.csv; batch/sequential "
-              "are retained for approximation and legacy-result audits"),
+        help=("pooled reads selected_edges.csv; batch/sequential read their "
+              "corresponding approximation outputs"),
     )
     parser.add_argument("--methods", nargs="+", choices=["global", "equal"],
                         default=["global"])

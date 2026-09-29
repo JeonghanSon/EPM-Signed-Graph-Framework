@@ -34,7 +34,7 @@ def prepare_intervention(
     reused_labels: np.ndarray | None = None,
     gray_coordinate_normalization: str = "l2",
 ) -> dict:
-    """Prepare score-free all-pair gray rankings for canonical mitigation."""
+    """Prepare gray-zone rankings for all retained community pairs."""
     state = np.asarray(node_state, dtype=np.float64)
     raw, normalized = pca_spaces(state, k)
     if gray_coordinate_normalization == "l2":
@@ -101,7 +101,7 @@ def prepare_intervention(
     pairs.to_csv(output_dir / "community_pairs.csv", index=False)
     summary = {
         "schema_version": 3,
-        "method": "score_free_all_pair_gray_preparation",
+        "method": "all_pair_gray_preparation",
         "graph_fingerprint": graph_fingerprint(graph, directed=False),
         "k": int(k),
         "kmeans_seed": int(kmeans_seed),
@@ -112,7 +112,6 @@ def prepare_intervention(
         },
         "community_pairs": len(pairs),
         "pair_selection": "all_retained_pairs",
-        "pair_score": "not_computed",
         "gray_node_coordinates": (
             "pca_nodewise_l2" if gray_coordinate_normalization == "l2" else "pca_raw"
         ),

@@ -14,7 +14,7 @@ from signed_epm.polarization.measure import build_weighted_laplacian, polarizati
 ROOT = Path(__file__).resolve().parents[3]
 
 
-def legacy_er(edge_path: Path, opinion_path: Path, num_nodes: int) -> float:
+def er_polarization(edge_path: Path, opinion_path: Path, num_nodes: int) -> float:
     graph = pd.read_csv(edge_path)
     positive = graph[graph["sign"] > 0].copy()
     opinion = pd.read_csv(opinion_path).sort_values("node_id")["opinion"].to_numpy(float)
@@ -30,7 +30,7 @@ def legacy_er(edge_path: Path, opinion_path: Path, num_nodes: int) -> float:
     return polarization_from_laplacian(laplacian, opinion[:, None])
 
 
-def legacy_er_from_laplacian(laplacian, opinion_path: Path, num_nodes: int) -> float:
+def er_polarization_from_laplacian(laplacian, opinion_path: Path, num_nodes: int) -> float:
     """Evaluate another opinion vector without rebuilding the same graph operator."""
     opinion = pd.read_csv(opinion_path).sort_values("node_id")["opinion"].to_numpy(float)
     if len(opinion) != num_nodes:
@@ -40,8 +40,8 @@ def legacy_er_from_laplacian(laplacian, opinion_path: Path, num_nodes: int) -> f
     return polarization_from_laplacian(laplacian, opinion[:, None])
 
 
-def evaluate_legacy(data_root: Path, output_dir: Path,
-                    opinion_set: str = "primary") -> dict:
+def evaluate_er_baseline(data_root: Path, output_dir: Path,
+                         opinion_set: str = "primary") -> dict:
     summary = json.loads((data_root / "generation_summary.json").read_text())
     opinion_records = (summary["opinions"] if opinion_set == "primary" else
                        summary.get("additional_random_opinions", []))
@@ -66,14 +66,18 @@ def evaluate_legacy(data_root: Path, output_dir: Path,
                 "graph_seed": graph["graph_seed"],
                 "opinion_distribution": opinion_record["distribution"],
                 "opinion_seed": opinion_record["seed"],
-                "legacy_er": legacy_er_from_laplacian(
+                "er_polarization": er_polarization_from_laplacian(
                     laplacian, opinion_path, num_nodes,
                 ),
             })
     frame = pd.DataFrame(rows)
     aggregate = frame.groupby(
         ["experiment", "opinion_distribution", "level"], as_index=False,
-    ).agg(mean=("legacy_er", "mean"), std=("legacy_er", "std"), n=("legacy_er", "size"))
+    ).agg(
+        mean=("er_polarization", "mean"),
+        std=("er_polarization", "std"),
+        n=("er_polarization", "size"),
+    )
     associations = []
     for (experiment, distribution), group in frame.groupby(
         ["experiment", "opinion_distribution"], sort=True,
@@ -81,10 +85,12 @@ def evaluate_legacy(data_root: Path, output_dir: Path,
         paired = group.groupby(["graph_seed", "opinion_seed"], sort=True)
         values, constant = [], 0
         for _, part in paired:
-            if np.ptp(part["legacy_er"].to_numpy()) <= 1e-12:
+            if np.ptp(part["er_polarization"].to_numpy()) <= 1e-12:
                 constant += 1
             else:
-                values.append(float(spearmanr(part["level"], part["legacy_er"]).statistic))
+                values.append(float(
+                    spearmanr(part["level"], part["er_polarization"]).statistic,
+                ))
         associations.append({
             "experiment": experiment, "opinion_distribution": distribution,
             "spearman_mean": None if not values else float(np.mean(values)),
@@ -92,26 +98,30 @@ def evaluate_legacy(data_root: Path, output_dir: Path,
             "nonconstant_replicates": len(values), "constant_replicates": constant,
         })
     output_dir.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(output_dir / "legacy_er_raw.csv", index=False)
-    aggregate.to_csv(output_dir / "legacy_er_aggregate.csv", index=False)
+    frame.to_csv(output_dir / "er_baseline_raw.csv", index=False)
+    aggregate.to_csv(output_dir / "er_baseline_aggregate.csv", index=False)
     result = {"rows": len(frame), "opinion_set": opinion_set,
               "aggregate": aggregate.to_dict("records"),
               "associations": associations}
-    (output_dir / "legacy_er_summary.json").write_text(json.dumps(result, indent=2) + "\n")
+    (output_dir / "er_baseline_summary.json").write_text(
+        json.dumps(result, indent=2) + "\n",
+    )
     return result
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Validate synthetic graphs with legacy ER polarization")
+    parser = argparse.ArgumentParser(
+        description="Validate synthetic graphs with the ER-based polarization baseline",
+    )
     parser.add_argument("--data-root", type=Path,
                         default=ROOT / "data" / "synthetic" / "k2_controlled")
     parser.add_argument("--output-dir", type=Path,
                         default=ROOT / "artifacts" / "synthetic" / "k2_validation" /
-                        "legacy_aligned")
+                        "er_baseline_aligned")
     parser.add_argument("--opinion-set", choices=["primary", "additional_random"],
                         default="primary")
     args = parser.parse_args()
-    result = evaluate_legacy(args.data_root, args.output_dir, args.opinion_set)
+    result = evaluate_er_baseline(args.data_root, args.output_dir, args.opinion_set)
     print(json.dumps({"rows": result["rows"], "associations": result["associations"]}, indent=2))
 
 

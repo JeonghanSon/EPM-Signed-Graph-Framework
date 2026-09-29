@@ -29,7 +29,7 @@ class MitigationTests(unittest.TestCase):
         self.assertTrue(all(left < right for left, right in first))
         self.assertNotEqual(first, sorted(first))
 
-    def test_preparation_is_score_free_and_all_pair(self):
+    def test_preparation_covers_all_retained_pairs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             state = np.asarray([
@@ -45,7 +45,10 @@ class MitigationTests(unittest.TestCase):
             summary = prepare_intervention(state, graph, 4, 1, root)
             pairs = pd.read_csv(root / "community_pairs.csv")
             self.assertEqual(len(pairs), 6)
-            self.assertNotIn("delta", pairs.columns)
+            self.assertEqual(
+                list(pairs.columns),
+                ["community_1", "community_2", "size_c1", "size_c2"],
+            )
             self.assertEqual(summary["pair_selection"], "all_retained_pairs")
 
     @staticmethod

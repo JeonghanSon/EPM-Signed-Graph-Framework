@@ -25,15 +25,7 @@ def _all_retained_pairs(preparation: Path) -> pd.DataFrame:
     required = {"community_1", "community_2"}
     if not required.issubset(pairs.columns):
         raise ValueError("community_pairs.csv lacks canonical pair columns")
-    # A canonical preparation is score-free. Refuse historical scored files
-    # rather than silently interpreting legacy sentinel values as a new method.
-    legacy = {"delta", "delta_normalized", "prune_score"}.intersection(pairs.columns)
-    if legacy:
-        raise ValueError(
-            "canonical candidate sampling requires score-free preparation; "
-            f"found legacy columns {sorted(legacy)}"
-        )
-    return pairs.sort_values(
+    return pairs[["community_1", "community_2"]].sort_values(
         ["community_1", "community_2"], kind="mergesort",
     ).reset_index(drop=True)
 
@@ -49,8 +41,8 @@ def sample_unique_gray_union(
     Unordered node pairs are proposed uniformly from the complete physical
     universe and accepted exactly when they occur in at least one retained
     pair's gray candidate space. Conditioning on this predicate yields a
-    uniform sample over the unique union, without pair quotas or pair scores.
-    Pair/type labels are provenance only and never affect acceptance.
+    uniform sample over the unique union. Pair/type labels are provenance only
+    and never affect acceptance.
     """
     if candidate_cap < 1:
         raise ValueError("candidate_cap must be positive")

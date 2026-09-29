@@ -88,7 +88,6 @@ def main() -> None:
         "schema_version": 1,
         "method": "pooled_gray_greedy",
         "allocation": "global_unconstrained",
-        "pair_scores": False,
         "candidate_file": str(args.candidate_file),
         "candidate_count": len(candidates),
         "maximum_budget": args.maximum_budget,

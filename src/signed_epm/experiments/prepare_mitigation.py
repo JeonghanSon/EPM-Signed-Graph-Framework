@@ -11,7 +11,7 @@ from signed_epm.polarization.measure import load_node_state
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Prepare canonical score-free gray-zone rankings",
+        description="Prepare gray-zone rankings for embedding community pairs",
     )
     parser.add_argument("--node-state", type=Path, required=True)
     parser.add_argument("--graph", type=Path, required=True)

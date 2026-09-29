@@ -124,8 +124,8 @@ def polarization(
     """Compute the canonical signed EPM score.
 
     The structural and antagonistic signals share the signed conductance
-    geometry ``L_eta``.  Setting ``antagonistic_weight=0`` recovers the
-    structural-only formulation without maintaining a separate legacy path.
+    geometry ``L_eta``. Setting ``antagonistic_weight=0`` evaluates the
+    structural component alone.
     """
     if antagonistic_weight < 0:
         raise ValueError("antagonistic_weight must be nonnegative")

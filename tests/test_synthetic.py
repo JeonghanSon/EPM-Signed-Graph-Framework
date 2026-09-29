@@ -12,7 +12,7 @@ from signed_epm.synthetic.generate import (
     generated_opinion,
     generate_replicate,
 )
-from signed_epm.synthetic.validate import legacy_er
+from signed_epm.synthetic.validate import er_polarization
 from signed_epm.synthetic.generate_unsigned_sbm import (
     P_OUT_LEVELS,
     SBMConfig,
@@ -65,7 +65,7 @@ class SyntheticGeneratorTests(unittest.TestCase):
         self.assertTrue((values[:50] < 0).all())
         self.assertTrue((values[50:] > 0).all())
 
-    def test_legacy_er_ignores_negative_edge_placement(self):
+    def test_er_baseline_ignores_negative_edge_placement(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             records = generate_replicate(root, 1, GeneratorConfig(), levels=(0.5, 0.9))
@@ -76,7 +76,7 @@ class SyntheticGeneratorTests(unittest.TestCase):
             scores = []
             for record in records:
                 if record["experiment"] == "antagonistic":
-                    scores.append(legacy_er(
+                    scores.append(er_polarization(
                         Path(record["path"]) / "train_snapshot_undirected.csv",
                         opinion_path, 100,
                     ))
