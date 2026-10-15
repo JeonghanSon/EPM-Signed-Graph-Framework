@@ -98,6 +98,7 @@ def train(args: argparse.Namespace) -> dict:
                            if args.task == "signlink_3class" else None),
         "classifier": ("multinomial_logistic_regression" if args.task == "signlink_3class"
                        else "binary_logistic_regression"),
+        "classifier_max_iterations": 5000,
         "config": {
             "input_dimension": config.input_dimension,
             "output_dimension": config.output_dimension,

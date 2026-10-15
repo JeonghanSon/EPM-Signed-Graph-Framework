@@ -5,6 +5,10 @@ polarization measurement and mitigation (EPM) for signed graphs. The included
 pipeline supports SGCN and SDGNN backbones and uses BTC-Alpha as the default
 lightweight example.
 
+This anonymous artifact focuses on the core EPM pipeline and representative
+undirected and directed backbone integrations. Additional backbone integrations
+and full experimental artifacts will be released upon publication.
+
 The canonical mitigation pipeline is deliberately stage-oriented:
 
 1. preprocess a connected transductive train/validation/test split;

@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from signed_epm.graph import graph_fingerprint
@@ -38,6 +39,16 @@ class GraphAndSignLinkTests(unittest.TestCase):
         self.assertEqual(len(examples["validation"]), len(self.validation))
         self.assertIsInstance(protocol_for("sign_prediction_2class", 0, False),
                               SignPredictionProtocol)
+
+    def test_common_probes_use_the_paper_iteration_limit(self):
+        state = np.eye(6, dtype=np.float64)
+        for task in ("signlink_3class", "sign_prediction_2class"):
+            protocol = protocol_for(task, seed=0, directed=False)
+            examples = protocol.examples(
+                self.train, self.validation, self.test, self.train, 6,
+            )
+            probe = protocol.fit_probe(state, examples["train"])
+            self.assertEqual(probe.max_iter, 5000)
 
     def test_evaluation_non_edges_are_fixed_by_base_history(self):
         augmented = pd.concat([

@@ -85,7 +85,7 @@ class SignLinkProtocol:
         return result
 
     def fit_probe(self, node_state: np.ndarray, examples: pd.DataFrame) -> LogisticRegression:
-        probe = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=self.seed,
+        probe = LogisticRegression(solver="lbfgs", max_iter=5000, random_state=self.seed,
                                    class_weight=self.class_weight)
         probe.fit(endpoint_features(node_state, examples), examples["label"].to_numpy())
         return probe
@@ -129,7 +129,7 @@ class SignPredictionProtocol:
                 (("train", train), ("validation", validation), ("test", test))}
 
     def fit_probe(self, node_state: np.ndarray, examples: pd.DataFrame) -> LogisticRegression:
-        probe = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=self.seed,
+        probe = LogisticRegression(solver="lbfgs", max_iter=5000, random_state=self.seed,
                                    class_weight=self.class_weight)
         probe.fit(endpoint_features(node_state, examples), examples["label"].to_numpy())
         return probe
