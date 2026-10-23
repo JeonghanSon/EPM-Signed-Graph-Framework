@@ -61,48 +61,59 @@ sampling, and selection settings are recorded in
 
 ## Running another dataset
 
-After placing a downloaded raw file under `data/raw/`, the individual stages
-can be run as follows. Replace the example dataset, `k`, minimum community size,
-and node-state path using [`configs/datasets.json`](configs/datasets.json) and
-the selected run recorded in `selected_runs.csv`.
+After placing a downloaded raw file under `data/raw/`, run the desired stages
+individually.
+
+Preprocess the dataset and estimate `k` with signed Louvain:
 
 ```bash
-DATASET=bitcoinotc
-MODEL=sgcn
-K=17
-MIN_COMMUNITY_SIZE=30
-ROOT=artifacts/manual/$MODEL/$DATASET
-
-bash experiments/preprocess.sh "$DATASET"
-bash experiments/train_base.sh "$MODEL" "$DATASET" cuda
-
-# Use node_embeddings.pt from one of the runs listed in:
-# artifacts/runs/$MODEL/$DATASET/signlink_3class/base/selected_runs.csv
-NODE_STATE=artifacts/path/to/selected/run/node_embeddings.pt
-
-bash experiments/measure.sh \
-  "$NODE_STATE" "$DATASET" "$K" "$ROOT/measurement/seed_0"
-bash experiments/prepare_mitigation.sh \
-  "$NODE_STATE" "$DATASET" "$K" "$ROOT/preparation/seed_0" \
-  "$MIN_COMMUNITY_SIZE"
-
-TRAIN_EDGES=$(($(wc -l < "data/processed/$DATASET/train_snapshot_undirected.csv") - 1))
-MAX_BUDGET=$((TRAIN_EDGES * 10 / 100))
-bash experiments/select_mitigation.sh \
-  "$DATASET" "$ROOT/preparation/seed_0" \
-  "$ROOT/measurement/seed_0/opinion_coordinates.npy" \
-  "$MAX_BUDGET" 0 "$ROOT/selection/seed_0"
-bash experiments/materialize_mitigation.sh \
-  "$ROOT/selection" "$DATASET" "$ROOT/graphs" .025 .05 .075 .10
+bash experiments/preprocess.sh <dataset>
 ```
 
-Set `DIRECTED_BACKBONE=1` for SDGNN materialization. The generated augmented
-training snapshots can be passed to `signed-epm-train` using the selected base
-configuration; run `signed-epm-train --help` for its arguments.
+Append `fallback` to use the stored paper value of `k` instead of running
+signed Louvain.
 
-Random and Graph-Wide Greedy baselines are exposed through
-`signed-epm-random` and `signed-epm-graph-wide`; run either command with
-`--help` for its arguments.
+Train the backbone and select its common five-seed configuration:
+
+```bash
+bash experiments/train_base.sh <model> <dataset> [device]
+```
+
+The output `selected_runs.csv` identifies the selected `node_embeddings.pt`
+files used in subsequent stages.
+
+Measure polarization:
+
+```bash
+bash experiments/measure.sh <node-state-path> <dataset> [output-dir]
+```
+
+Prepare the mitigation candidates:
+
+```bash
+bash experiments/prepare_mitigation.sh <node-state-path> <dataset> [output-dir]
+```
+
+Sample candidates and run pooled greedy selection:
+
+```bash
+bash experiments/select_mitigation.sh <dataset> <preparation-dir> <coordinates-path> <maximum-budget> [seed] [output-dir]
+```
+
+Materialize the selected budget prefixes:
+
+```bash
+bash experiments/materialize_mitigation.sh <selection-parent> <dataset> <output-dir> [rates...]
+```
+
+`measure.sh` and `prepare_mitigation.sh` automatically use the newly computed
+`k`, or the stored paper value when no computed result is available. The
+dataset-specific minimum community size is also loaded automatically.
+
+Set `DIRECTED_BACKBONE=1` when materializing SDGNN graphs. Generated training
+snapshots can be passed to `signed-epm-train`; run it with `--help` for the
+available arguments. Random and Graph-Wide Greedy baselines are exposed through
+`signed-epm-random` and `signed-epm-graph-wide`.
 
 ## Repository layout
 
