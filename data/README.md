@@ -22,6 +22,10 @@ The repository's MIT License applies to the implementation, not to third-party
 dataset files. The included BTC-Alpha copy and any additionally downloaded
 datasets retain their original source terms and attribution requirements.
 
+The generated networks used for the controlled synthetic validation are
+included under [`data/synthetic/`](synthetic/README.md), together with their
+construction metadata and graph fingerprints.
+
 Preprocessing preserves the transductive node set, restricts the experiment to
 the largest connected component, and reserves a spanning tree in the training
 split so that the effective-resistance operator is well-defined. The generated

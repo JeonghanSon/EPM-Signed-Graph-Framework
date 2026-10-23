@@ -1,0 +1,434 @@
+{
+  "schema_version": 1,
+  "config": {
+    "num_nodes": 1000,
+    "num_communities": 8,
+    "expected_negative_edges": null,
+    "expected_negative_share": 0.2,
+    "positive_source_level": 5
+  },
+  "levels": [
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "graphs": [
+    {
+      "experiment": "antagonistic",
+      "level": 0.5,
+      "token": "0p5",
+      "graph_seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_0/ratio_0p5",
+      "q_negative_in": 0.009357595046182585,
+      "q_negative_out": 0.0012369729146374366,
+      "realized_negative_edges": 1113,
+      "realized_inter_negative_fraction": 0.5139263252470799
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.6,
+      "token": "0p6",
+      "graph_seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_0/ratio_0p6",
+      "q_negative_in": 0.007486076036946069,
+      "q_negative_out": 0.0014843674975649238,
+      "realized_negative_edges": 1107,
+      "realized_inter_negative_fraction": 0.6160794941282746
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.7,
+      "token": "0p7",
+      "graph_seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_0/ratio_0p7",
+      "q_negative_in": 0.005614557027709552,
+      "q_negative_out": 0.001731762080492411,
+      "realized_negative_edges": 1105,
+      "realized_inter_negative_fraction": 0.7058823529411765
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.8,
+      "token": "0p8",
+      "graph_seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_0/ratio_0p8",
+      "q_negative_in": 0.003743038018473033,
+      "q_negative_out": 0.0019791566634198986,
+      "realized_negative_edges": 1129,
+      "realized_inter_negative_fraction": 0.812223206377325
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.9,
+      "token": "0p9",
+      "graph_seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_0/ratio_0p9",
+      "q_negative_in": 0.0018715190092365166,
+      "q_negative_out": 0.002226551246347386,
+      "realized_negative_edges": 1153,
+      "realized_inter_negative_fraction": 0.9019947961838681
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 1.0,
+      "token": "1",
+      "graph_seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_0/ratio_1",
+      "q_negative_in": 0.0,
+      "q_negative_out": 0.002473945829274873,
+      "realized_negative_edges": 1167,
+      "realized_inter_negative_fraction": 1.0
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.5,
+      "token": "0p5",
+      "graph_seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_1/ratio_0p5",
+      "q_negative_in": 0.009385599086315498,
+      "q_negative_out": 0.001240074261557069,
+      "realized_negative_edges": 1107,
+      "realized_inter_negative_fraction": 0.48870822041553746
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.6,
+      "token": "0p6",
+      "graph_seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_1/ratio_0p6",
+      "q_negative_in": 0.007508479269052399,
+      "q_negative_out": 0.001488089113868483,
+      "realized_negative_edges": 1085,
+      "realized_inter_negative_fraction": 0.6018433179723502
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.7,
+      "token": "0p7",
+      "graph_seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_1/ratio_0p7",
+      "q_negative_in": 0.0056313594517893,
+      "q_negative_out": 0.0017361039661798966,
+      "realized_negative_edges": 1049,
+      "realized_inter_negative_fraction": 0.7073403241182078
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.8,
+      "token": "0p8",
+      "graph_seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_1/ratio_0p8",
+      "q_negative_in": 0.0037542396345261984,
+      "q_negative_out": 0.0019841188184913107,
+      "realized_negative_edges": 1069,
+      "realized_inter_negative_fraction": 0.7998129092609916
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.9,
+      "token": "0p9",
+      "graph_seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_1/ratio_0p9",
+      "q_negative_in": 0.0018771198172630992,
+      "q_negative_out": 0.0022321336708027244,
+      "realized_negative_edges": 1076,
+      "realized_inter_negative_fraction": 0.9033457249070632
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 1.0,
+      "token": "1",
+      "graph_seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_1/ratio_1",
+      "q_negative_in": 0.0,
+      "q_negative_out": 0.002480148523114138,
+      "realized_negative_edges": 1077,
+      "realized_inter_negative_fraction": 1.0
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.5,
+      "token": "0p5",
+      "graph_seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_2/ratio_0p5",
+      "q_negative_in": 0.009282317336792046,
+      "q_negative_out": 0.0012271909387924944,
+      "realized_negative_edges": 1066,
+      "realized_inter_negative_fraction": 0.5262664165103189
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.6,
+      "token": "0p6",
+      "graph_seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_2/ratio_0p6",
+      "q_negative_in": 0.007425853869433637,
+      "q_negative_out": 0.0014726291265509932,
+      "realized_negative_edges": 1058,
+      "realized_inter_negative_fraction": 0.6266540642722117
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.7,
+      "token": "0p7",
+      "graph_seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_2/ratio_0p7",
+      "q_negative_in": 0.005569390402075228,
+      "q_negative_out": 0.001718067314309492,
+      "realized_negative_edges": 1058,
+      "realized_inter_negative_fraction": 0.717391304347826
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.8,
+      "token": "0p8",
+      "graph_seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_2/ratio_0p8",
+      "q_negative_in": 0.0037129269347168175,
+      "q_negative_out": 0.0019635055020679913,
+      "realized_negative_edges": 1083,
+      "realized_inter_negative_fraction": 0.8116343490304709
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.9,
+      "token": "0p9",
+      "graph_seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_2/ratio_0p9",
+      "q_negative_in": 0.0018564634673584087,
+      "q_negative_out": 0.00220894368982649,
+      "realized_negative_edges": 1095,
+      "realized_inter_negative_fraction": 0.9059360730593607
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 1.0,
+      "token": "1",
+      "graph_seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_2/ratio_1",
+      "q_negative_in": 0.0,
+      "q_negative_out": 0.002454381877584989,
+      "realized_negative_edges": 1096,
+      "realized_inter_negative_fraction": 1.0
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.5,
+      "token": "0p5",
+      "graph_seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_3/ratio_0p5",
+      "q_negative_in": 0.009213026952315134,
+      "q_negative_out": 0.0012192640286815715,
+      "realized_negative_edges": 1076,
+      "realized_inter_negative_fraction": 0.5260223048327137
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.6,
+      "token": "0p6",
+      "graph_seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_3/ratio_0p6",
+      "q_negative_in": 0.0073704215618521085,
+      "q_negative_out": 0.0014631168344178857,
+      "realized_negative_edges": 1069,
+      "realized_inter_negative_fraction": 0.6267539756782039
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.7,
+      "token": "0p7",
+      "graph_seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_3/ratio_0p7",
+      "q_negative_in": 0.005527816171389081,
+      "q_negative_out": 0.0017069696401541999,
+      "realized_negative_edges": 1080,
+      "realized_inter_negative_fraction": 0.725925925925926
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.8,
+      "token": "0p8",
+      "graph_seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_3/ratio_0p8",
+      "q_negative_in": 0.003685210780926053,
+      "q_negative_out": 0.0019508224458905145,
+      "realized_negative_edges": 1087,
+      "realized_inter_negative_fraction": 0.8178472861085556
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.9,
+      "token": "0p9",
+      "graph_seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_3/ratio_0p9",
+      "q_negative_in": 0.0018426053904630265,
+      "q_negative_out": 0.002194675251626829,
+      "realized_negative_edges": 1114,
+      "realized_inter_negative_fraction": 0.9048473967684022
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 1.0,
+      "token": "1",
+      "graph_seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_3/ratio_1",
+      "q_negative_in": 0.0,
+      "q_negative_out": 0.002438528057363143,
+      "realized_negative_edges": 1133,
+      "realized_inter_negative_fraction": 1.0
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.5,
+      "token": "0p5",
+      "graph_seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_4/ratio_0p5",
+      "q_negative_in": 0.009253499222395023,
+      "q_negative_out": 0.0012244309997118986,
+      "realized_negative_edges": 1075,
+      "realized_inter_negative_fraction": 0.47162790697674417
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.6,
+      "token": "0p6",
+      "graph_seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_4/ratio_0p6",
+      "q_negative_in": 0.0074027993779160195,
+      "q_negative_out": 0.0014693171996542783,
+      "realized_negative_edges": 1092,
+      "realized_inter_negative_fraction": 0.5815018315018315
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.7,
+      "token": "0p7",
+      "graph_seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_4/ratio_0p7",
+      "q_negative_in": 0.0055520995334370155,
+      "q_negative_out": 0.001714203399596658,
+      "realized_negative_edges": 1117,
+      "realized_inter_negative_fraction": 0.675022381378693
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.8,
+      "token": "0p8",
+      "graph_seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_4/ratio_0p8",
+      "q_negative_in": 0.0037013996889580084,
+      "q_negative_out": 0.001959089599539038,
+      "realized_negative_edges": 1077,
+      "realized_inter_negative_fraction": 0.7790157845868152
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 0.9,
+      "token": "0p9",
+      "graph_seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_4/ratio_0p9",
+      "q_negative_in": 0.0018506998444790042,
+      "q_negative_out": 0.002203975799481417,
+      "realized_negative_edges": 1087,
+      "realized_inter_negative_fraction": 0.8776448942042319
+    },
+    {
+      "experiment": "antagonistic",
+      "level": 1.0,
+      "token": "1",
+      "graph_seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/antagonistic/k8/graph_seed_4/ratio_1",
+      "q_negative_in": 0.0,
+      "q_negative_out": 0.0024488619994237973,
+      "realized_negative_edges": 1055,
+      "realized_inter_negative_fraction": 1.0
+    }
+  ],
+  "opinions": [
+    {
+      "distribution": "hohmann_normal_aligned",
+      "seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_aligned_seed_0.csv",
+      "sha256": "8f2f5554e2871934b65d3b83fd4a2b5df63e6b35bb71e8b9c51fba3ee75ae799",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_aligned",
+      "seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_aligned_seed_1.csv",
+      "sha256": "d0e1ca865883d5bdc7e02e6f6468682b177f34119b0e4b0f1f44c762898a0e4f",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_aligned",
+      "seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_aligned_seed_2.csv",
+      "sha256": "7fb712ad1cef593ee8e241e9a9ae162e13071e8d1d884d3200f5920873d93aa7",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_aligned",
+      "seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_aligned_seed_3.csv",
+      "sha256": "d76466376b00eb909fa1ef03d7041e7b522e3414bcf2d3eda54e51fe2974737c",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_aligned",
+      "seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_aligned_seed_4.csv",
+      "sha256": "4b20d97095db784863bd4d6cdff30dd4281c9dbfbf4a889b768e66178768ebeb",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    }
+  ],
+  "additional_random_opinions": [
+    {
+      "distribution": "hohmann_normal_random",
+      "seed": 0,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_random_seed_0.csv",
+      "sha256": "ac55f6a1c6587f284ad48479856d06450f14a0402d9a9d6ca1541cd26664cafc",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_random",
+      "seed": 1,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_random_seed_1.csv",
+      "sha256": "81173686506fcbc63510cb45c8a5f75c427b8e01392828619c3f110f40056e3f",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_random",
+      "seed": 2,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_random_seed_2.csv",
+      "sha256": "9275f9f0be3242b598dc07d0005e2e4e26f1ad84ccb450cc570370d2a3ee5057",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_random",
+      "seed": 3,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_random_seed_3.csv",
+      "sha256": "c4531aaacec176e32b517f998d7ef660110ac9f1ed3c7cba0602e54d436286bc",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    },
+    {
+      "distribution": "hohmann_normal_random",
+      "seed": 4,
+      "path": "data/synthetic/eq1_antagonistic20_n1000_k8/opinions/hohmann_normal_random_seed_4.csv",
+      "sha256": "f2dc4cdd6d135da98f98ea2adace8a73b4f46d4d5759b07a187b2ebef2cd6580",
+      "same_multiset_as_aligned": true,
+      "permutation_fixed_across_levels": true
+    }
+  ]
+}
