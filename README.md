@@ -1,154 +1,84 @@
-# EPM Signed Graph Framework
+# EPM: Reviewer Artifact
 
 This repository provides a compact implementation of embedding-aware
-polarization measurement and mitigation (EPM) for signed graphs. The included
-pipeline supports SGCN and SDGNN backbones and uses BTC-Alpha as the default
-lightweight example.
+polarization measurement and mitigation (EPM) for signed networks. It is
+intended for reviewers who want to inspect and run the core method described in
+the paper. The artifact includes SGCN and SDGNN integrations and a lightweight
+end-to-end example using BTC-Alpha.
 
-This anonymous artifact focuses on the core EPM pipeline and representative
-undirected and directed backbone integrations. Additional backbone integrations
-and full experimental artifacts will be released upon publication.
-
-The canonical mitigation pipeline is deliberately stage-oriented:
-
-1. preprocess a connected transductive train/validation/test split;
-2. train a signed graph encoder and a separate multinomial logistic probe;
-3. measure signed polarization from PCA/L2-normalized node coordinates;
-4. identify embedding communities and rank gray-zone nodes for community
-   pairs;
-5. uniformly sample unique physical candidates from the combined gray-zone
-   candidate space;
-6. select one pooled greedy edge order and materialize physical-budget
-   prefixes;
-7. recompute graph-derived features, retrain, and remeasure every augmented
-   graph.
-
-Intervention strength is defined by the number or rate of positive physical
-edges added to the training graph.
+The repository is intentionally limited to the code and data needed to verify
+the main pipeline. Additional backbone integrations and complete experimental
+artifacts will be released upon publication.
 
 ## Installation
 
-Python 3.10 is recommended. Install the CUDA-compatible PyTorch build for your
-machine if needed, then run:
+Python 3.10 is recommended. Install a CUDA-compatible PyTorch build first when
+using a GPU, then run:
 
 ```bash
 pip install -e '.[test]'
 pytest -q
 ```
 
-The code is released under the MIT License. Dataset files remain subject to
-their original source terms; see `data/README.md` for sources and attribution.
+## Quick reproduction
 
-## Quick start
-
-The commands below run the core pipeline on BTC-Alpha. Generated files are
-written under `data/processed/` and `artifacts/`.
-
-For a single-seed, 5% budget demonstration of preprocessing, base training,
-measurement, mitigation, retraining, and remeasurement, run:
+The following command runs preprocessing, SGCN training, polarization
+measurement, 5% EPM augmentation, retraining, and final evaluation on
+BTC-Alpha:
 
 ```bash
-bash experiments/quickstart.sh cuda
+bash experiments/quickstart.sh cuda artifacts/quickstart
 ```
 
-Use `cpu` instead of `cuda` on a CPU-only machine. The stage commands below
-provide the same workflow when individual outputs or settings are needed.
-The quick start uses preprocessing split seed 0, matching the paper protocol.
-Its final output summarizes the base and mitigated Macro-F1 and polarization
-scores and reports the corresponding artifact locations.
+Use `cpu` instead of `cuda` on a CPU-only machine. Choose a different output
+directory when running the command more than once.
 
-### Data
-
-BTC-Alpha is included for a lightweight reproduction. Download the other SNAP
-signed-network files as described in `data/README.md`.
-
-```bash
-bash experiments/preprocess.sh bitcoinalpha
-```
-
-### Base model and measurement
-
-```bash
-bash experiments/train_base.sh sgcn bitcoinalpha cuda
-
-bash experiments/measure.sh \
-  artifacts/path/to/node_embeddings.pt bitcoinalpha 14 \
-  artifacts/measurement/seed_0
-```
-
-Model hyperparameters are selected once per dataset/backbone using mean
-validation Macro-F1 across five seeds and then held fixed across interventions
-and baselines. Test labels are reporting-only.
-
-### Mitigation
-
-```bash
-bash experiments/prepare_mitigation.sh \
-  artifacts/path/to/node_embeddings.pt bitcoinalpha 14 \
-  artifacts/mitigation/preparation/seed_0 30
-
-bash experiments/select_mitigation.sh \
-  bitcoinalpha artifacts/mitigation/preparation/seed_0 \
-  artifacts/measurement/seed_0/opinion_coordinates.npy \
-  988 0 artifacts/mitigation/selection/seed_0
-```
-
-For multiple seeds, place each `selection` output at
-`<selection-parent>/seed_N/selected_edges.csv`, then materialize prefixes:
-
-```bash
-bash experiments/materialize_mitigation.sh \
-  artifacts/mitigation/selection bitcoinalpha \
-  artifacts/mitigation/graphs .025 .05 .075 .10
-```
-
-For SDGNN, preserve directed model edges during materialization:
-
-```bash
-DIRECTED_BACKBONE=1 bash experiments/materialize_mitigation.sh \
-  artifacts/mitigation/selection bitcoinalpha \
-  artifacts/mitigation/graphs .025 .05 .075 .10
-```
-
-Pass each generated `train_snapshot_directed_augmented.csv` to
-`signed-epm-train` with the base-selected model hyperparameters. SGCN
-recomputes TSVD from that exact augmented graph; SDGNN receives the directed
-augmented view. The encoder and probe are freshly trained for every graph.
-
-The package also exposes matched baselines through `signed-epm-random` and
-`signed-epm-graph-wide`. Run either command with `--help` to list its inputs.
-
-## Reproduction protocol
-
-The paper protocol uses five seeds. Model hyperparameters are selected by mean
-validation Macro-F1 and then fixed across the base graph, EPM, and matched
-baselines. The small-graph intervention rates are 2.5%, 5%, 7.5%, and 10% of
-the physical training-edge count. All datasets use preprocessing split seed 0.
-`configs/paper/mitigation.json` records the measurement, sampling, and
-selection settings.
-
-## Synthetic validation
-
-Seeded signed-SBM generators and validators are included under
-`signed_epm.synthetic`. Synthetic graphs and their generation metadata can be
-saved for exact reuse. The measurement is
+The command prints the original and mitigated test Macro-F1 and polarization
+scores. Detailed outputs are written to:
 
 ```text
-sqrt(structural_energy + alpha * antagonistic_energy)
+artifacts/quickstart/base/metrics.json
+artifacts/quickstart/base_measurement/measurement.json
+artifacts/quickstart/selection/seed_0/selected_edges.csv
+artifacts/quickstart/mitigated/metrics.json
+artifacts/quickstart/mitigated_measurement/measurement.json
 ```
 
-with `Y = L^- Z`, negative conductance `eta=0.1`, and antagonistic weight
-`alpha=0.05` in the paper configuration.
+This single-seed run is a functional reproduction of the complete pipeline,
+not a reproduction of the paper's aggregated five-seed tables.
 
-## Layout
+## Data and paper settings
+
+BTC-Alpha is included for the quick reproduction. Instructions and source links
+for the other five datasets are provided in [`data/README.md`](data/README.md).
+
+The paper uses preprocessing split seed 0 and reports five-seed results. Model
+hyperparameters are selected by validation Macro-F1 and then fixed across the
+base graph, EPM, and matched baselines. The small-network intervention rates
+are 2.5%, 5%, 7.5%, and 10% of the physical training-edge count. Measurement,
+sampling, and selection settings are recorded in
+[`configs/paper/mitigation.json`](configs/paper/mitigation.json).
+
+For inspection or custom runs, the individual stage scripts are available
+under [`experiments/`](experiments/). The package also exposes Random and
+Graph-Wide Greedy baselines through `signed-epm-random` and
+`signed-epm-graph-wide`; run either command with `--help` for its arguments.
+
+## Repository layout
 
 ```text
 configs/       model, task, dataset, and paper settings
-data/          public-data instructions and BTC-Alpha raw input
-experiments/   concise stage commands
-src/           implementation
-tests/         unit/regression tests
+data/          dataset instructions, metadata, and BTC-Alpha input
+experiments/   quick reproduction and individual stage scripts
+src/           EPM implementation
+tests/         unit and regression tests
 ```
 
-Generated data, checkpoints, logs, figures, and full result directories are
-ignored. No server address, username, absolute path, or credential is required.
+Generated datasets, checkpoints, logs, and result artifacts are excluded from
+version control.
+
+## License
+
+The implementation is released under the [MIT License](LICENSE). Third-party
+datasets remain subject to their original source terms and attribution
+requirements.
