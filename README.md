@@ -1,9 +1,9 @@
-# EPM: Reviewer Artifact
+# EPM: Embedding-aware Polarization Management
 
 This repository provides a compact implementation of embedding-aware
 polarization measurement and mitigation (EPM) for signed networks. It is
-intended for reviewers who want to inspect and run the core method described in
-the paper. The artifact includes SGCN and SDGNN integrations and a lightweight
+designed to support inspection and reproduction of the core method described in
+the paper. The repository includes SGCN and SDGNN integrations and a lightweight
 end-to-end example using BTC-Alpha.
 
 The repository is intentionally limited to the code and data needed to verify

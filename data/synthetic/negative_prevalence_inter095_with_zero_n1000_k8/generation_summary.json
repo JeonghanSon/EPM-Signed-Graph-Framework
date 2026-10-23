@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "config": {
+    "num_nodes": 1000,
+    "num_communities": 8,
+    "positive_source": "data/synthetic/eq1_signed_structural20_n1000_k8",
+    "positive_source_level": 3,
+    "negative_shares": [
+      0.0,
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.3
+    ],
+    "negative_inter_fraction": 0.95,
+    "negative_sets_nested_within_seed": true
+  },
+  "graphs": [
+    {
+      "experiment": "prevalence",
+      "level": 0.0,
+      "token": "0",
+      "graph_seed": 0,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_0/share_0",
+      "negative_share": 0.0,
+      "negative_edges": 0,
+      "positive_edges": 4421
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.05,
+      "token": "0p05",
+      "graph_seed": 0,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_0/share_0p05",
+      "negative_share": 0.05006446067898582,
+      "negative_edges": 233,
+      "positive_edges": 4421
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.1,
+      "token": "0p1",
+      "graph_seed": 0,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_0/share_0p1",
+      "negative_share": 0.09995928338762215,
+      "negative_edges": 491,
+      "positive_edges": 4421
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.15,
+      "token": "0p15",
+      "graph_seed": 0,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_0/share_0p15",
+      "negative_share": 0.14997115939242453,
+      "negative_edges": 780,
+      "positive_edges": 4421
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.2,
+      "token": "0p2",
+      "graph_seed": 0,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_0/share_0p2",
+      "negative_share": 0.19996380745566414,
+      "negative_edges": 1105,
+      "positive_edges": 4421
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.3,
+      "token": "0p3",
+      "graph_seed": 0,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_0/share_0p3",
+      "negative_share": 0.3000316656111463,
+      "negative_edges": 1895,
+      "positive_edges": 4421
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.0,
+      "token": "0",
+      "graph_seed": 1,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_1/share_0",
+      "negative_share": 0.0,
+      "negative_edges": 0,
+      "positive_edges": 4432
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.05,
+      "token": "0p05",
+      "graph_seed": 1,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_1/share_0p05",
+      "negative_share": 0.04994640943193998,
+      "negative_edges": 233,
+      "positive_edges": 4432
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.1,
+      "token": "0p1",
+      "graph_seed": 1,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_1/share_0p1",
+      "negative_share": 0.09991876523151909,
+      "negative_edges": 492,
+      "positive_edges": 4432
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.15,
+      "token": "0p15",
+      "graph_seed": 1,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_1/share_0p15",
+      "negative_share": 0.14998082086689682,
+      "negative_edges": 782,
+      "positive_edges": 4432
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.2,
+      "token": "0p2",
+      "graph_seed": 1,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_1/share_0p2",
+      "negative_share": 0.2,
+      "negative_edges": 1108,
+      "positive_edges": 4432
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.3,
+      "token": "0p3",
+      "graph_seed": 1,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_1/share_0p3",
+      "negative_share": 0.29995261412099194,
+      "negative_edges": 1899,
+      "positive_edges": 4432
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.0,
+      "token": "0",
+      "graph_seed": 2,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_2/share_0",
+      "negative_share": 0.0,
+      "negative_edges": 0,
+      "positive_edges": 4390
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.05,
+      "token": "0p05",
+      "graph_seed": 2,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_2/share_0p05",
+      "negative_share": 0.04998917983120537,
+      "negative_edges": 231,
+      "positive_edges": 4390
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.1,
+      "token": "0p1",
+      "graph_seed": 2,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_2/share_0p1",
+      "negative_share": 0.1000410004100041,
+      "negative_edges": 488,
+      "positive_edges": 4390
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.15,
+      "token": "0p15",
+      "graph_seed": 2,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_2/share_0p15",
+      "negative_share": 0.15004840271055178,
+      "negative_edges": 775,
+      "positive_edges": 4390
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.2,
+      "token": "0p2",
+      "graph_seed": 2,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_2/share_0p2",
+      "negative_share": 0.2000728862973761,
+      "negative_edges": 1098,
+      "positive_edges": 4390
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.3,
+      "token": "0p3",
+      "graph_seed": 2,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_2/share_0p3",
+      "negative_share": 0.2999521607399139,
+      "negative_edges": 1881,
+      "positive_edges": 4390
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.0,
+      "token": "0",
+      "graph_seed": 3,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_3/share_0",
+      "negative_share": 0.0,
+      "negative_edges": 0,
+      "positive_edges": 4377
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.05,
+      "token": "0p05",
+      "graph_seed": 3,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_3/share_0p05",
+      "negative_share": 0.04992402865205123,
+      "negative_edges": 230,
+      "positive_edges": 4377
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.1,
+      "token": "0p1",
+      "graph_seed": 3,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_3/share_0p1",
+      "negative_share": 0.0999383096853794,
+      "negative_edges": 486,
+      "positive_edges": 4377
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.15,
+      "token": "0p15",
+      "graph_seed": 3,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_3/share_0p15",
+      "negative_share": 0.14993202563604582,
+      "negative_edges": 772,
+      "positive_edges": 4377
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.2,
+      "token": "0p2",
+      "graph_seed": 3,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_3/share_0p2",
+      "negative_share": 0.19996344361177115,
+      "negative_edges": 1094,
+      "positive_edges": 4377
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.3,
+      "token": "0p3",
+      "graph_seed": 3,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_3/share_0p3",
+      "negative_share": 0.30001599232368464,
+      "negative_edges": 1876,
+      "positive_edges": 4377
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.0,
+      "token": "0",
+      "graph_seed": 4,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_4/share_0",
+      "negative_share": 0.0,
+      "negative_edges": 0,
+      "positive_edges": 4345
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.05,
+      "token": "0p05",
+      "graph_seed": 4,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_4/share_0p05",
+      "negative_share": 0.050065588106689984,
+      "negative_edges": 229,
+      "positive_edges": 4345
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.1,
+      "token": "0p1",
+      "graph_seed": 4,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_4/share_0p1",
+      "negative_share": 0.1000414250207125,
+      "negative_edges": 483,
+      "positive_edges": 4345
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.15,
+      "token": "0p15",
+      "graph_seed": 4,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_4/share_0p15",
+      "negative_share": 0.15003912363067293,
+      "negative_edges": 767,
+      "positive_edges": 4345
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.2,
+      "token": "0p2",
+      "graph_seed": 4,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_4/share_0p2",
+      "negative_share": 0.19996317436936106,
+      "negative_edges": 1086,
+      "positive_edges": 4345
+    },
+    {
+      "experiment": "prevalence",
+      "level": 0.3,
+      "token": "0p3",
+      "graph_seed": 4,
+      "path": "data/synthetic/negative_prevalence_inter095_with_zero_n1000_k8/prevalence/graph_seed_4/share_0p3",
+      "negative_share": 0.2999838891574029,
+      "negative_edges": 1862,
+      "positive_edges": 4345
+    }
+  ]
+}

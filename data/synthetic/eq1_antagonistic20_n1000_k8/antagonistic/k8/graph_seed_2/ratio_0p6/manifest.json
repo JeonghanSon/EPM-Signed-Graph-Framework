@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "dataset": "antagonistic_signed_sbm_g2_r0p6",
+  "synthetic": {
+    "experiment": "antagonistic",
+    "graph_model": "two_layer_signed_sbm",
+    "num_nodes": 1000,
+    "num_communities": 8,
+    "graph_seed": 2,
+    "expected_inter_negative_fraction": 0.6,
+    "expected_negative_edges": 1073.5,
+    "q_negative_in": 0.007425853869433637,
+    "q_negative_out": 0.0014726291265509932,
+    "q_out_over_q_in": 0.19831108347184717,
+    "realized_negative_edges": 1058,
+    "realized_inter_negative_edges": 663,
+    "realized_inter_negative_fraction": 0.6266540642722117,
+    "positive_source": "unsigned_sbm_level_5",
+    "positive_source_fingerprint": "71e2396ccadd8f43017db2fb6d64e6d7d5f0f3bcde58861551051c0e5392742f"
+  },
+  "counts": {
+    "num_nodes": 1000,
+    "splits": {
+      "train": 5352,
+      "val": 0,
+      "test": 0
+    },
+    "positive": {
+      "train": 4294,
+      "val": 0,
+      "test": 0
+    },
+    "negative": {
+      "train": 1058,
+      "val": 0,
+      "test": 0
+    }
+  },
+  "validation": {
+    "train_connected": true,
+    "positive_train_connected": true,
+    "positive_graph_unchanged": true
+  },
+  "communities": {
+    "selected_k": 8,
+    "source": "ground_truth"
+  },
+  "graph_fingerprint": "384bbda164dbb7da473a3cfb415572dccdd0f505d6b4fa70072854079c7038e7"
+}

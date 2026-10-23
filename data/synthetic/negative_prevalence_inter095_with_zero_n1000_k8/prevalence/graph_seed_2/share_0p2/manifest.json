@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "dataset": "negative_prevalence_g2_s0p2",
+  "synthetic": {
+    "experiment": "prevalence",
+    "graph_model": "fixed_positive_sbm_with_nested_negative_edges",
+    "graph_seed": 2,
+    "positive_source": "data/synthetic/eq1_signed_structural20_n1000_k8/structural/graph_seed_2/level_3",
+    "positive_source_level": 3,
+    "positive_source_fingerprint": "ceaf99589db8dc73dac8f0e22bbef185156024b5244064a566c63c3b4a33eaad",
+    "target_negative_share": 0.2,
+    "realized_negative_share": 0.2000728862973761,
+    "target_inter_negative_fraction": 0.95,
+    "realized_inter_negative_fraction": 0.9499089253187614,
+    "negative_sets_nested_within_seed": true
+  },
+  "counts": {
+    "num_nodes": 1000,
+    "splits": {
+      "train": 5488,
+      "val": 0,
+      "test": 0
+    },
+    "positive": {
+      "train": 4390,
+      "val": 0,
+      "test": 0
+    },
+    "negative": {
+      "train": 1098,
+      "val": 0,
+      "test": 0
+    }
+  },
+  "validation": {
+    "train_connected": true,
+    "positive_train_connected": true,
+    "positive_graph_unchanged": true
+  },
+  "communities": {
+    "selected_k": 8,
+    "source": "ground_truth"
+  },
+  "graph_fingerprint": "b36bf6069d8db7ad29b8662705dd739ada027a6a915617f5aeb7819af9d51b15"
+}
