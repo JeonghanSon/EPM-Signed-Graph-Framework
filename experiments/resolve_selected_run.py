@@ -13,6 +13,12 @@ def main() -> None:
     parser.add_argument("seed", nargs="?", type=int, default=0)
     args = parser.parse_args()
 
+    final_node_state = (Path("artifacts/base") / args.model / args.dataset
+                        / f"seed_{args.seed}" / "node_embeddings.pt")
+    if final_node_state.exists():
+        print(final_node_state)
+        return
+
     root = (Path("artifacts/runs") / args.model / args.dataset
             / "signlink_3class" / "base")
     selected_runs = root / "selected_runs.csv"

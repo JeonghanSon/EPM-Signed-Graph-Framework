@@ -47,6 +47,16 @@ artifacts/quickstart/mitigated_measurement/measurement.json
 This single-seed run is a functional reproduction of the complete pipeline,
 not a reproduction of the paper's aggregated five-seed tables.
 
+To run the same workflow with model selection, all five seeds, and every paper
+budget on another downloaded dataset, use:
+
+```bash
+bash experiments/run_full.sh bitcoinotc
+```
+
+This defaults to SGCN and CUDA. The script is resumable and reuses completed
+preprocessing, training, and evaluation outputs.
+
 ## Data and paper settings
 
 BTC-Alpha is included for the quick reproduction. Instructions and source links
@@ -75,6 +85,8 @@ Train the backbone and select its common five-seed configuration:
 ```bash
 bash experiments/train_base.sh [model] [dataset]
 ```
+
+This also trains and evaluates the selected configuration on all five seeds.
 
 Measure polarization for the selected run:
 
