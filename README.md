@@ -59,10 +59,50 @@ are 2.5%, 5%, 7.5%, and 10% of the physical training-edge count. Measurement,
 sampling, and selection settings are recorded in
 [`configs/paper/mitigation.json`](configs/paper/mitigation.json).
 
-For inspection or custom runs, the individual stage scripts are available
-under [`experiments/`](experiments/). The package also exposes Random and
-Graph-Wide Greedy baselines through `signed-epm-random` and
-`signed-epm-graph-wide`; run either command with `--help` for its arguments.
+## Running another dataset
+
+After placing a downloaded raw file under `data/raw/`, the individual stages
+can be run as follows. Replace the example dataset, `k`, minimum community size,
+and node-state path using [`configs/datasets.json`](configs/datasets.json) and
+the selected run recorded in `selected_runs.csv`.
+
+```bash
+DATASET=bitcoinotc
+MODEL=sgcn
+K=17
+MIN_COMMUNITY_SIZE=30
+ROOT=artifacts/manual/$MODEL/$DATASET
+
+bash experiments/preprocess.sh "$DATASET"
+bash experiments/train_base.sh "$MODEL" "$DATASET" cuda
+
+# Use node_embeddings.pt from one of the runs listed in:
+# artifacts/runs/$MODEL/$DATASET/signlink_3class/base/selected_runs.csv
+NODE_STATE=artifacts/path/to/selected/run/node_embeddings.pt
+
+bash experiments/measure.sh \
+  "$NODE_STATE" "$DATASET" "$K" "$ROOT/measurement/seed_0"
+bash experiments/prepare_mitigation.sh \
+  "$NODE_STATE" "$DATASET" "$K" "$ROOT/preparation/seed_0" \
+  "$MIN_COMMUNITY_SIZE"
+
+TRAIN_EDGES=$(($(wc -l < "data/processed/$DATASET/train_snapshot_undirected.csv") - 1))
+MAX_BUDGET=$((TRAIN_EDGES * 10 / 100))
+bash experiments/select_mitigation.sh \
+  "$DATASET" "$ROOT/preparation/seed_0" \
+  "$ROOT/measurement/seed_0/opinion_coordinates.npy" \
+  "$MAX_BUDGET" 0 "$ROOT/selection/seed_0"
+bash experiments/materialize_mitigation.sh \
+  "$ROOT/selection" "$DATASET" "$ROOT/graphs" .025 .05 .075 .10
+```
+
+Set `DIRECTED_BACKBONE=1` for SDGNN materialization. The generated augmented
+training snapshots can be passed to `signed-epm-train` using the selected base
+configuration; run `signed-epm-train --help` for its arguments.
+
+Random and Graph-Wide Greedy baselines are exposed through
+`signed-epm-random` and `signed-epm-graph-wide`; run either command with
+`--help` for its arguments.
 
 ## Repository layout
 
