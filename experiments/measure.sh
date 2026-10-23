@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-node_state="${1:?node-state path required}"
+model="${1:-sgcn}"
 dataset="${2:-bitcoinalpha}"
-output="${3:-artifacts/measurement/$dataset}"
+seed="${3:-0}"
+output="${4:-artifacts/measurement/$model/$dataset/seed_$seed}"
 python_bin="${PYTHON_BIN:-python}"
+edge_path="${EDGE_PATH:-data/processed/$dataset/train_snapshot_undirected.csv}"
+node_state="${NODE_STATE_PATH:-}"
+if [[ -z "$node_state" ]]; then
+  node_state=$("$python_bin" experiments/resolve_selected_run.py \
+    "$model" "$dataset" "$seed")
+fi
 k="${K:-}"
 if [[ -z "$k" ]]; then
   k=$("$python_bin" - "$dataset" <<'PY'
@@ -28,8 +35,8 @@ else:
 PY
   )
 fi
-echo "dataset=$dataset k=$k"
+echo "model=$model dataset=$dataset seed=$seed k=$k"
 signed-epm-measure --node-state-path "$node_state" \
-  --edge-path "data/processed/$dataset/train_snapshot_undirected.csv" \
+  --edge-path "$edge_path" \
   --output-dir "$output" --k "$k" \
   --negative-conductance .1 --antagonistic-weight .05

@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
-node_state="${1:?node-state path required}"
+model="${1:-sgcn}"
 dataset="${2:-bitcoinalpha}"
-output="${3:-artifacts/mitigation/preparation/$dataset}"
+seed="${3:-0}"
+output="${4:-artifacts/mitigation/$model/$dataset/preparation/seed_$seed}"
 python_bin="${PYTHON_BIN:-python}"
+node_state="${NODE_STATE_PATH:-}"
+if [[ -z "$node_state" ]]; then
+  node_state=$("$python_bin" experiments/resolve_selected_run.py \
+    "$model" "$dataset" "$seed")
+fi
 read -r resolved_k resolved_minimum_size < <("$python_bin" - "$dataset" <<'PY'
 import json
 import sys
@@ -27,7 +33,7 @@ PY
 )
 k="${K:-$resolved_k}"
 minimum_size="${MINIMUM_COMMUNITY_SIZE:-$resolved_minimum_size}"
-echo "dataset=$dataset k=$k minimum_community_size=$minimum_size"
+echo "model=$model dataset=$dataset seed=$seed k=$k minimum_community_size=$minimum_size"
 signed-epm-prepare --node-state "$node_state" \
   --graph "data/processed/$dataset/train_snapshot_undirected.csv" \
   --output-dir "$output" --communities "$k" \

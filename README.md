@@ -67,36 +67,37 @@ individually.
 Preprocess the dataset and estimate `k` with signed Louvain:
 
 ```bash
-bash experiments/preprocess.sh <dataset>
+bash experiments/preprocess.sh [dataset]
 ```
 
 Train the backbone and select its common five-seed configuration:
 
 ```bash
-bash experiments/train_base.sh <model> <dataset>
+bash experiments/train_base.sh [model] [dataset]
 ```
 
-The output `selected_runs.csv` records the selected model runs and their learned
-node representations.
-
-Run measurement for a specific learned representation when desired:
+Measure polarization for the selected run:
 
 ```bash
-bash experiments/measure.sh <node-state-path> <dataset>
+bash experiments/measure.sh [model] [dataset] [seed]
 ```
 
-Here, `<node-state-path>` is a `node_embeddings.pt` file recorded in
-`selected_runs.csv`. For the usual workflow, the following command finds that
-file automatically and performs measurement, candidate preparation, pooled
-greedy selection, and augmented-graph construction:
+Construct the mitigated graphs:
 
 ```bash
-bash experiments/mitigate.sh <model> <dataset> [seed]
+bash experiments/mitigate.sh [model] [dataset] [seed]
 ```
 
-The scripts automatically use the newly computed `k`, or the stored paper value
-when no computed result is available. Dataset-specific community-size and
-small/large-network settings are also loaded automatically.
+Retrain and evaluate the backbone on those graphs:
+
+```bash
+bash experiments/retrain.sh [model] [dataset] [seed] [device]
+```
+
+All arguments are optional; the defaults are SGCN, BTC-Alpha, seed 0, and CUDA.
+The scripts locate the validation-selected node representation automatically
+and use either the newly computed `k` or the stored paper value. Dataset-specific
+community-size and small/large-network settings are also loaded automatically.
 
 Candidate selection, graph materialization, matched baselines, and optional
 arguments are available through the remaining scripts in `experiments/` and
