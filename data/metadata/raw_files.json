@@ -1,7 +1,6 @@
 {
   "source": "Stanford Network Analysis Project (SNAP)",
   "source_index": "https://snap.stanford.edu/data/",
-  "local_import_origin": "../EPM-ICDM/data/raw",
   "files": {
     "bitcoinalpha": {
       "filename": "soc-sign-bitcoinalpha.csv",

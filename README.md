@@ -36,6 +36,9 @@ pip install -e '.[test]'
 pytest -q
 ```
 
+The code is released under the MIT License. Dataset files remain subject to
+their original source terms; see `data/README.md` for sources and attribution.
+
 ## Quick start
 
 The commands below run the core pipeline on BTC-Alpha. Generated files are
@@ -50,6 +53,9 @@ bash experiments/quickstart.sh cuda
 
 Use `cpu` instead of `cuda` on a CPU-only machine. The stage commands below
 provide the same workflow when individual outputs or settings are needed.
+The quick start uses preprocessing split seed 0, matching the paper protocol.
+Its final output summarizes the base and mitigated Macro-F1 and polarization
+scores and reports the corresponding artifact locations.
 
 ### Data
 
@@ -117,8 +123,9 @@ The package also exposes matched baselines through `signed-epm-random` and
 The paper protocol uses five seeds. Model hyperparameters are selected by mean
 validation Macro-F1 and then fixed across the base graph, EPM, and matched
 baselines. The small-graph intervention rates are 2.5%, 5%, 7.5%, and 10% of
-the physical training-edge count. `configs/paper/mitigation.json` records the
-measurement, sampling, and selection settings.
+the physical training-edge count. All datasets use preprocessing split seed 0.
+`configs/paper/mitigation.json` records the measurement, sampling, and
+selection settings.
 
 ## Synthetic validation
 

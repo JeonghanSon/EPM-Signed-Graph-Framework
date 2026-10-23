@@ -2,6 +2,7 @@
   "schema_version": 1,
   "dataset": "wiki_rfa",
   "source_graph": "train_snapshot_undirected.csv",
+  "graph_fingerprint": "091c8c7841583476478b7783ab3b5297d40b6de1d4db1d0be880146433a9eccf",
   "method": "signed_louvain",
   "positive_layer_weight": 1.0,
   "negative_layer_weight": -1.0,
@@ -9,6 +10,13 @@
     1.0,
     1.0
   ],
+  "exploration_depth": 2,
+  "layer_masks": [
+    false,
+    true
+  ],
+  "maximum_passes": 10,
+  "convergence_epsilon": 1e-07,
   "minimum_community_size": 30,
   "seeds": [
     0,
@@ -23,19 +31,19 @@
     9
   ],
   "valid_community_counts": [
+    9,
+    9,
+    8,
     8,
     7,
     7,
-    8,
-    8,
-    6,
-    6,
     7,
     7,
+    9,
     9
   ],
-  "mean": 7.3,
+  "mean": 8.0,
   "selection_rule": "mode; first occurrence breaks ties",
-  "selected_k": 7,
+  "selected_k": 9,
   "k_source": "computed"
 }

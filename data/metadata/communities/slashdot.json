@@ -2,6 +2,7 @@
   "schema_version": 1,
   "dataset": "slashdot",
   "source_graph": "train_snapshot_undirected.csv",
+  "graph_fingerprint": "73da7674aa1643c59464a769146e9370470cb014b1c00b92891276611ec9ee96",
   "method": "signed_louvain",
   "positive_layer_weight": 1.0,
   "negative_layer_weight": -1.0,
@@ -9,6 +10,13 @@
     1.0,
     1.0
   ],
+  "exploration_depth": 2,
+  "layer_masks": [
+    false,
+    true
+  ],
+  "maximum_passes": 10,
+  "convergence_epsilon": 1e-07,
   "minimum_community_size": 500,
   "seeds": [
     0,
@@ -23,19 +31,19 @@
     9
   ],
   "valid_community_counts": [
-    26,
-    26,
-    27,
-    31,
-    27,
+    25,
     23,
-    26,
+    30,
     25,
     26,
-    23
+    25,
+    24,
+    24,
+    29,
+    24
   ],
-  "mean": 26.0,
+  "mean": 25.5,
   "selection_rule": "mode; first occurrence breaks ties",
-  "selected_k": 26,
+  "selected_k": 25,
   "k_source": "computed"
 }

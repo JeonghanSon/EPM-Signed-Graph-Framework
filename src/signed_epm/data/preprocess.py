@@ -401,7 +401,7 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=ROOT / "data" / "processed")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--checksums", type=Path, default=DEFAULT_CHECKSUMS)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ratios", nargs=3, type=float, default=(0.7, 0.15, 0.15))
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()

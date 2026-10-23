@@ -2,6 +2,7 @@
   "schema_version": 1,
   "dataset": "wiki_elec",
   "source_graph": "train_snapshot_undirected.csv",
+  "graph_fingerprint": "3d17c60865da25a181f87a424aad68e352e958c03022b20fd961bc4a5e034da2",
   "method": "signed_louvain",
   "positive_layer_weight": 1.0,
   "negative_layer_weight": -1.0,
@@ -9,6 +10,13 @@
     1.0,
     1.0
   ],
+  "exploration_depth": 2,
+  "layer_masks": [
+    false,
+    true
+  ],
+  "maximum_passes": 10,
+  "convergence_epsilon": 1e-07,
   "minimum_community_size": 30,
   "seeds": [
     0,
@@ -25,16 +33,16 @@
   "valid_community_counts": [
     7,
     7,
+    7,
+    7,
+    7,
     6,
-    8,
     7,
-    7,
-    8,
-    7,
-    7,
-    8
+    6,
+    6,
+    7
   ],
-  "mean": 7.2,
+  "mean": 6.7,
   "selection_rule": "mode; first occurrence breaks ties",
   "selected_k": 7,
   "k_source": "computed"

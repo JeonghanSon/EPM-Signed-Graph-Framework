@@ -2,6 +2,7 @@
   "schema_version": 1,
   "dataset": "bitcoinotc",
   "source_graph": "train_snapshot_undirected.csv",
+  "graph_fingerprint": "d9b1b3b7330c25becd64955e6aa95e0fc440709563cb954bb9bc48677e3a997e",
   "method": "signed_louvain",
   "positive_layer_weight": 1.0,
   "negative_layer_weight": -1.0,
@@ -9,6 +10,13 @@
     1.0,
     1.0
   ],
+  "exploration_depth": 2,
+  "layer_masks": [
+    false,
+    true
+  ],
+  "maximum_passes": 10,
+  "convergence_epsilon": 1e-07,
   "minimum_community_size": 30,
   "seeds": [
     0,
@@ -23,19 +31,19 @@
     9
   ],
   "valid_community_counts": [
-    16,
-    14,
     15,
-    15,
-    16,
-    14,
-    15,
+    18,
     17,
     16,
+    16,
+    14,
+    14,
+    17,
+    17,
     16
   ],
-  "mean": 15.4,
+  "mean": 16.0,
   "selection_rule": "mode; first occurrence breaks ties",
-  "selected_k": 16,
+  "selected_k": 17,
   "k_source": "computed"
 }

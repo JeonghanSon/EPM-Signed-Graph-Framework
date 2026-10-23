@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset": "bitcoinalpha",
   "source_graph": "train_snapshot_undirected.csv",
-  "graph_fingerprint": "3530d815396edeb19dcbe9347a178b49828f3fdc9c49d850764c3049d8689405",
+  "graph_fingerprint": "81029e63c7e60a401b80e6c964db3ef870a4533c629230e9501c67e70e150457",
   "method": "signed_louvain",
   "positive_layer_weight": 1.0,
   "negative_layer_weight": -1.0,
@@ -31,18 +31,18 @@
     9
   ],
   "valid_community_counts": [
+    14,
+    14,
     15,
     16,
     14,
-    14,
-    14,
-    17,
-    14,
     15,
-    16,
-    15
+    15,
+    14,
+    14,
+    14
   ],
-  "mean": 15.0,
+  "mean": 14.5,
   "selection_rule": "mode; first occurrence breaks ties",
   "selected_k": 14,
   "k_source": "computed"

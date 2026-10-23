@@ -14,7 +14,7 @@ if [[ -e "$output" ]]; then
 fi
 
 if [[ ! -f "data/processed/$dataset/train_snapshot_undirected.csv" ]]; then
-  "$python_bin" -m signed_epm.data.preprocess --dataset "$dataset"
+  "$python_bin" -m signed_epm.data.preprocess --dataset "$dataset" --seed 0
 fi
 
 base="$output/base"
@@ -78,6 +78,32 @@ mitigated="$output/mitigated"
   --edge-path "$augmented_undirected" \
   --output-dir "$output/mitigated_measurement" --k "$k" \
   --negative-conductance .1 --antagonistic-weight .05
+
+"$python_bin" - \
+  "$base/metrics.json" "$output/base_measurement/measurement.json" \
+  "$mitigated/metrics.json" "$output/mitigated_measurement/measurement.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+
+def read_json(path: str) -> dict:
+    with Path(path).open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+base_metrics, base_measurement, mitigated_metrics, mitigated_measurement = map(
+    read_json, sys.argv[1:]
+)
+base_f1 = float(base_metrics["test"]["macro_f1"])
+mitigated_f1 = float(mitigated_metrics["test"]["macro_f1"])
+base_p = float(base_measurement["polarization"])
+mitigated_p = float(mitigated_measurement["polarization"])
+
+print("result summary")
+print(f"  test Macro-F1: {base_f1:.6f} -> {mitigated_f1:.6f}")
+print(f"  polarization:  {base_p:.6f} -> {mitigated_p:.6f}")
+PY
 
 echo "quick start complete: $output"
 echo "base metrics: $base/metrics.json"

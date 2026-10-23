@@ -6,6 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "signed-epm"
 version = "0.2.0"
 description = "Embedding-aware polarization measurement and mitigation for signed graphs"
+readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",

@@ -35,15 +35,15 @@ class PreprocessingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             manifest = write_dataset(
                 "bitcoinalpha", spec, self.root / "data/raw" / spec["raw_file"],
-                Path(directory) / "bitcoinalpha", 42, (0.7, 0.15, 0.15), False,
+                Path(directory) / "bitcoinalpha", 0, (0.7, 0.15, 0.15), False,
             )
         self.assertEqual(manifest["counts"]["num_nodes"], 3775)
         self.assertEqual(manifest["counts"]["splits"],
                          {"train": 9884, "val": 2118, "test": 2118})
         self.assertEqual(manifest["counts"]["positive"],
-                         {"train": 8976, "val": 1896, "test": 1874})
+                         {"train": 8964, "val": 1892, "test": 1890})
         self.assertEqual(manifest["counts"]["negative"],
-                         {"train": 908, "val": 222, "test": 244})
+                         {"train": 920, "val": 226, "test": 228})
         self.assertEqual(manifest["validation"], {
             "train_connected": True, "pair_disjoint": True, "transductive": True,
         })

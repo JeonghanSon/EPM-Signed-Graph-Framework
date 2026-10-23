@@ -8,7 +8,7 @@
   "bitcoinotc": {
     "raw_file": "soc-sign-bitcoinotc.csv",
     "format": "bitcoin",
-    "fallback_k": 16,
+    "fallback_k": 17,
     "minimum_community_size": 30
   },
   "wiki_elec": {
@@ -20,20 +20,20 @@
   "wiki_rfa": {
     "raw_file": "wiki-RfA.txt",
     "format": "wiki_rfa",
-    "fallback_k": 7,
+    "fallback_k": 9,
     "minimum_community_size": 30
   },
   "slashdot": {
     "raw_file": "soc-sign-Slashdot090221.txt",
     "format": "snap_static",
-    "fallback_k": 26,
+    "fallback_k": 25,
     "minimum_community_size": 500,
     "intervention_profile": "large"
   },
   "epinions": {
     "raw_file": "soc-sign-epinions.txt",
     "format": "snap_static",
-    "fallback_k": 27,
+    "fallback_k": 25,
     "minimum_community_size": 500,
     "intervention_profile": "large"
   }
