@@ -76,24 +76,27 @@ Train the backbone and select its common five-seed configuration:
 bash experiments/train_base.sh <model> <dataset>
 ```
 
-The output `selected_runs.csv` identifies the selected `node_embeddings.pt`
-files used in subsequent stages.
+The output `selected_runs.csv` records the selected model runs and their learned
+node representations.
 
-Measure polarization:
+Run measurement for a specific learned representation when desired:
 
 ```bash
 bash experiments/measure.sh <node-state-path> <dataset>
 ```
 
-Prepare the mitigation candidates:
+Here, `<node-state-path>` is a `node_embeddings.pt` file recorded in
+`selected_runs.csv`. For the usual workflow, the following command finds that
+file automatically and performs measurement, candidate preparation, pooled
+greedy selection, and augmented-graph construction:
 
 ```bash
-bash experiments/prepare_mitigation.sh <node-state-path> <dataset>
+bash experiments/mitigate.sh <model> <dataset> [seed]
 ```
 
-`measure.sh` and `prepare_mitigation.sh` automatically use the newly computed
-`k`, or the stored paper value when no computed result is available. The
-dataset-specific minimum community size is also loaded automatically.
+The scripts automatically use the newly computed `k`, or the stored paper value
+when no computed result is available. Dataset-specific community-size and
+small/large-network settings are also loaded automatically.
 
 Candidate selection, graph materialization, matched baselines, and optional
 arguments are available through the remaining scripts in `experiments/` and

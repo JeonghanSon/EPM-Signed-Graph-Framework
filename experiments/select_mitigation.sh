@@ -7,6 +7,8 @@ maximum_budget="${4:?maximum physical-edge budget required}"
 seed="${5:-0}"
 output="${6:-artifacts/mitigation/seed_${seed}}"
 candidate_cap=$((20 * maximum_budget))
+solver="${SOLVER:-direct}"
+solver_tolerance="${SOLVER_TOLERANCE:-1e-6}"
 
 signed-epm-sample-candidates \
   --data-dir "data/processed/$dataset" --preparation "$preparation" \
@@ -16,4 +18,5 @@ signed-epm-select \
   --data-dir "data/processed/$dataset" --coordinates "$coordinates" \
   --candidate-file "$output/candidates/candidates.csv" \
   --output-dir "$output" --maximum-budget "$maximum_budget" \
-  --eta .1 --alpha .05 --rates .25 .5 .75 1
+  --eta .1 --alpha .05 --rates .25 .5 .75 1 \
+  --solver "$solver" --solver-tolerance "$solver_tolerance"

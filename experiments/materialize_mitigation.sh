@@ -9,7 +9,12 @@ directed_args=()
 if [[ "${DIRECTED_BACKBONE:-0}" == "1" ]]; then
   directed_args+=(--directed-backbone)
 fi
+seed_args=()
+if [[ -n "${SEEDS:-}" ]]; then
+  read -r -a seed_values <<< "$SEEDS"
+  seed_args+=(--seeds "${seed_values[@]}")
+fi
 signed-epm-materialize --selection-root "$selection_parent" \
   --data-dir "data/processed/$dataset" --output-root "$output" \
   --selection-kind pooled --methods global --rates "${rates[@]}" \
-  "${directed_args[@]}"
+  "${directed_args[@]}" "${seed_args[@]}"
