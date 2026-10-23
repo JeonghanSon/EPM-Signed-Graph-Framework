@@ -70,13 +70,10 @@ Preprocess the dataset and estimate `k` with signed Louvain:
 bash experiments/preprocess.sh <dataset>
 ```
 
-Append `fallback` to use the stored paper value of `k` instead of running
-signed Louvain.
-
 Train the backbone and select its common five-seed configuration:
 
 ```bash
-bash experiments/train_base.sh <model> <dataset> [device]
+bash experiments/train_base.sh <model> <dataset>
 ```
 
 The output `selected_runs.csv` identifies the selected `node_embeddings.pt`
@@ -85,35 +82,22 @@ files used in subsequent stages.
 Measure polarization:
 
 ```bash
-bash experiments/measure.sh <node-state-path> <dataset> [output-dir]
+bash experiments/measure.sh <node-state-path> <dataset>
 ```
 
 Prepare the mitigation candidates:
 
 ```bash
-bash experiments/prepare_mitigation.sh <node-state-path> <dataset> [output-dir]
-```
-
-Sample candidates and run pooled greedy selection:
-
-```bash
-bash experiments/select_mitigation.sh <dataset> <preparation-dir> <coordinates-path> <maximum-budget> [seed] [output-dir]
-```
-
-Materialize the selected budget prefixes:
-
-```bash
-bash experiments/materialize_mitigation.sh <selection-parent> <dataset> <output-dir> [rates...]
+bash experiments/prepare_mitigation.sh <node-state-path> <dataset>
 ```
 
 `measure.sh` and `prepare_mitigation.sh` automatically use the newly computed
 `k`, or the stored paper value when no computed result is available. The
 dataset-specific minimum community size is also loaded automatically.
 
-Set `DIRECTED_BACKBONE=1` when materializing SDGNN graphs. Generated training
-snapshots can be passed to `signed-epm-train`; run it with `--help` for the
-available arguments. Random and Graph-Wide Greedy baselines are exposed through
-`signed-epm-random` and `signed-epm-graph-wide`.
+Candidate selection, graph materialization, matched baselines, and optional
+arguments are available through the remaining scripts in `experiments/` and
+the installed `signed-epm-*` commands.
 
 ## Repository layout
 
